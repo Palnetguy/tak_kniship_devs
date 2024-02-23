@@ -46,7 +46,8 @@ class Testimonial(models.Model):
         return self.name
 
 class Gallery(models.Model):
-    photo = CloudinaryField('TAK/TAK_KNISHIP_DEVS/gallery_images')
+    image = CloudinaryField('TAK/TAK_KNISHIP_DEVS/gallery_images')
+
 
 class FAQ(models.Model):
     title = models.CharField(max_length=255)
@@ -76,8 +77,8 @@ class MobileApplication(models.Model):
     name = models.CharField(max_length=255)
     version = models.CharField(max_length=20)
     icon = models.ImageField(upload_to='app_icons/')
-    apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
-    url = models.URLField(blank=True)
+    # apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
+    apk_url = models.URLField(blank=True)
     project = models.ForeignKey(Project,on_delete=models.CASCADE)
 
     def __str__(self):
@@ -87,8 +88,8 @@ class DesktopApplication(models.Model):
     name = models.CharField(max_length=255)
     version = models.CharField(max_length=20)
     icon = models.ImageField(upload_to='app_icons/')
-    apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
-    url = models.URLField(blank=True)
+    # apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
+    apk_url = models.URLField(blank=True)
     project = models.ForeignKey(Project,on_delete=models.CASCADE)
 
     def __str__(self):
