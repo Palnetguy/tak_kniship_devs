@@ -19,5 +19,5 @@ urlpatterns = [
     path('project/<int:project_id>/mobile-applications/', MobileApplicationListView.as_view(), name='mobile-application-list'),
     path('project/<int:project_id>/desktop-applications/', DesktopApplicationListView.as_view(), name='desktop-application-list'),
     path('project/<int:project_id>/web-applications/', WebApplicationListView.as_view(), name='web-application-list'),
-    path('project/<int:pk>/', ProjectDetailWithApplicationsView.as_view(), name='project-detail-with-applications'),
+    # path('project/<int:pk>/', ProjectDetailWithApplicationsView.as_view(), name='project-detail-with-applications'),
 ]
