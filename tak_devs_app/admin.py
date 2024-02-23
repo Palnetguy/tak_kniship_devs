@@ -12,3 +12,4 @@ admin.site.register(WorkExperience)
 admin.site.register(MobileApplication)
 admin.site.register(DesktopApplication)
 admin.site.register(WebApplication)
+

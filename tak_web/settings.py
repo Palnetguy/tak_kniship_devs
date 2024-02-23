@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     'rest_framework',
+    "rest_framework_api_key",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,11 +53,14 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    # 'tak_devs_app.middleware.ApiKeyMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -82,17 +86,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'tak_web.wsgi.application'
 
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework_api_key.authentication.ExpiringTokenAuthentication',
+#     ],
+# }
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if 'TAK_DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(default=os.environ['TAK_DATABASE_URL'])
     }
-}
+else:
+    # Use your local development database settings (SQLite, for example)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR/ 'db.sqlite3',
+        }
+    }
 
+# AUTH_USER_MODEL = 'tak_devs_app.User'
+    
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -154,20 +171,6 @@ EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-
-
-if 'TAK_DATABASE_URL' in os.environ:
-    DATABASES = {
-        'default': dj_database_url.config(default=os.environ['TAK_DATABASE_URL'])
-    }
-else:
-    # Use your local development database settings (SQLite, for example)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR/ 'db.sqlite3',
-        }
-    }
 
 
 
