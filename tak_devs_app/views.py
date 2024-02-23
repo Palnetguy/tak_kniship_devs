@@ -12,6 +12,19 @@ class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [HasAPIKey]
 
+
+class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['mobile_applications'] = MobileApplication.objects.filter(project=self.get_object())
+        context['desktop_applications'] = DesktopApplication.objects.filter(project=self.get_object())
+        context['web_applications'] = WebApplication.objects.filter(project=self.get_object())
+        return context
+
+
 class TeamMemberListView(generics.ListAPIView):
     queryset = TeamMember.objects.all()
     serializer_class = TeamMemberSerializer
@@ -47,12 +60,24 @@ class MobileApplicationListView(generics.ListAPIView):
     serializer_class = MobileApplicationSerializer
     permission_classes = [HasAPIKey]
 
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return MobileApplication.objects.filter(project__id=project_id)
+
 class DesktopApplicationListView(generics.ListAPIView):
     queryset = DesktopApplication.objects.all()
     serializer_class = DesktopApplicationSerializer
     permission_classes = [HasAPIKey]
 
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return MobileApplication.objects.filter(project__id=project_id)
+
 class WebApplicationListView(generics.ListAPIView):
     queryset = WebApplication.objects.all()
     serializer_class = WebApplicationSerializer
     permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return MobileApplication.objects.filter(project__id=project_id)

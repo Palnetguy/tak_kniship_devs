@@ -1,10 +1,6 @@
 from rest_framework import serializers
 from .models import Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 
-class ProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = '__all__'
 
 class TeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,4 +45,15 @@ class DesktopApplicationSerializer(serializers.ModelSerializer):
 class WebApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebApplication
+        fields = '__all__'
+
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    mobile_applications = MobileApplicationSerializer(many=True, read_only=True)
+    desktop_applications = DesktopApplicationSerializer(many=True, read_only=True)
+    web_applications = WebApplicationSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
         fields = '__all__'
