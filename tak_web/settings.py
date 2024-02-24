@@ -53,11 +53,12 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
-
+CORS_ALLOW_ALL_ORIGINS: True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'tak_devs_app.middleware.ApiKeyMiddleware',
