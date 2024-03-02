@@ -4,6 +4,10 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission
 from django.contrib.auth.models import AbstractUser
 from rest_framework_api_key.models import AbstractAPIKey
 
+
+class TechStack(models.Model):
+    language = models.TextField()
+
 class Project(models.Model):
     PROJECT_TYPE_CHOICES = [
         ('Mobile App', 'Mobile App'),
@@ -13,7 +17,7 @@ class Project(models.Model):
     title = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=PROJECT_TYPE_CHOICES)
     project_background_image = CloudinaryField('TAK/TAK_KNISHIP_DEVS/project_images')
-    tech_stack = models.TextField()
+    tech_stack =  models.ManyToManyField(TechStack,null=True, blank=True)
     description = models.TextField()
     project_goals = models.TextField()
     target_audience = models.TextField()
