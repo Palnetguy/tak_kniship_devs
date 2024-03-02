@@ -22,6 +22,7 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
         context['mobile_applications'] = MobileApplication.objects.filter(project=self.get_object())
         context['desktop_applications'] = DesktopApplication.objects.filter(project=self.get_object())
         context['web_applications'] = WebApplication.objects.filter(project=self.get_object())
+        print(context)
         return context
 
 
