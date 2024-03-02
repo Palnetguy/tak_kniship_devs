@@ -8,6 +8,9 @@ from rest_framework_api_key.models import AbstractAPIKey
 class TechStack(models.Model):
     language = models.TextField()
 
+    def __str__(self):
+        return self.language
+
 class Project(models.Model):
     PROJECT_TYPE_CHOICES = [
         ('Mobile App', 'Mobile App'),
