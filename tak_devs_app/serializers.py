@@ -3,16 +3,19 @@ from .models import Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, C
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):
+    profile_picture =  serializers.CharField(source='profile_picture.public_id', read_only=True)
     class Meta:
         model = TeamMember
         fields = '__all__'
 
 class TestimonialSerializer(serializers.ModelSerializer):
+    user_photo = serializers.CharField(source='user_photo.public_id', read_only=True)
     class Meta:
         model = Testimonial
         fields = '__all__'
 
 class GallerySerializer(serializers.ModelSerializer):
+    image = serializers.CharField(source='image.public_id', read_only=True)
     class Meta:
         model = Gallery
         fields = '__all__'
@@ -33,16 +36,19 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MobileApplicationSerializer(serializers.ModelSerializer):
+    icon = serializers.CharField(source='icon.public_id', read_only=True)
     class Meta:
         model = MobileApplication
         fields = '__all__'
 
 class DesktopApplicationSerializer(serializers.ModelSerializer):
+    icon = serializers.CharField(source='icon.public_id', read_only=True)
     class Meta:
         model = DesktopApplication
         fields = '__all__'
 
 class WebApplicationSerializer(serializers.ModelSerializer):
+    icon = serializers.CharField(source='icon.public_id', read_only=True)
     class Meta:
         model = WebApplication
         fields = '__all__'
@@ -57,6 +63,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     desktop_applications = DesktopApplicationSerializer(many=True, read_only=True)
     web_applications = WebApplicationSerializer(many=True, read_only=True)
     tech_stack = TechStackSerializer(many=True)
+    project_background_image =  serializers.CharField(source='project_background_image.public_id', read_only=True)
+
 
     class Meta:
         model = Project
