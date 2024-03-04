@@ -72,7 +72,7 @@ class DesktopApplicationListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
-        return MobileApplication.objects.filter(project__id=project_id)
+        return DesktopApplication.objects.filter(project__id=project_id)
 
 class WebApplicationListView(generics.ListAPIView):
     queryset = WebApplication.objects.all()
@@ -81,4 +81,4 @@ class WebApplicationListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
-        return MobileApplication.objects.filter(project__id=project_id)
+        return WebApplication.objects.filter(project__id=project_id)
