@@ -86,6 +86,8 @@ class MobileApplication(models.Model):
     icon = models.ImageField(upload_to='app_icons/')
     # apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
     apk_url = models.URLField(blank=True)
+    description = models.TextField(blank=True)
+    date_released = models.DateField(auto_now=True, blank=True)
     project = models.ForeignKey(Project,on_delete=models.CASCADE)
 
     def __str__(self):
@@ -97,6 +99,8 @@ class DesktopApplication(models.Model):
     icon = models.ImageField(upload_to='app_icons/')
     # apk = models.FileField(upload_to='TAK_KNISHIP_DEVS/apks/')
     apk_url = models.URLField(blank=True)
+    description = models.TextField(blank=True)
+    date_released = models.DateField(auto_now=True, blank=True)
     project = models.ForeignKey(Project,on_delete=models.CASCADE)
 
     def __str__(self):
