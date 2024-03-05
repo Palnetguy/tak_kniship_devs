@@ -1,6 +1,8 @@
 # views.py
 
 from rest_framework import generics
+
+from tak_web.settings import EMAIL_HOST_USER
 from .models import Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 from .serializers import ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -52,7 +54,7 @@ class FAQListView(generics.ListAPIView):
 class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
     serializer_class = ContactUsMessageSerializer
-    permission_classes = [HasAPIKey]
+    # permission_classes = [HasAPIKey]
 
     def perform_create(self, serializer):
         # Extract data from the request
@@ -80,21 +82,21 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
         contact_us_message.save()
 
         # Send email notification
-        # send_contact_us_notification(contact_us_message)
+        send_contact_us_notification(contact_us_message)
 
 def send_contact_us_notification(contact_us_message):
     # Compose the email subject and message
     subject = 'New Contact Us Message'
-    message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
-    plain_message = strip_tags(message)
+    # message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
+    # plain_message = strip_tags(message)
 
     # Send the email
     send_mail(
         subject,
-        plain_message,
-        'your_email@example.com',  # Sender's email address
-        ['recipient@example.com'],  # Recipient's email address
-        html_message=message,
+        "Trying Out stuff",
+        "telxul@gmail.com",  # Sender's email address
+        ['tusingwiremartinrhinetreviz@gmail.com'],  # Recipient's email address
+        # html_message=message,
     )
 
 class WorkExperienceDetailView(generics.ListAPIView):
