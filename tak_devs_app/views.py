@@ -89,13 +89,15 @@ def send_contact_us_notification(contact_us_message):
     subject = 'New Contact Us Message'
     # message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
     # plain_message = strip_tags(message)
-
+    print(contact_us_message.message)
     # Send the email
     send_mail(
-        subject,
-        "Trying Out stuff",
-        "telxul@gmail.com",  # Sender's email address
-        ['tusingwiremartinrhinetreviz@gmail.com'],  # Recipient's email address
+        contact_us_message.subject,
+        f"Hello,\n{contact_us_message.name} has sent a message:\n"
+    f"Phone number: {contact_us_message.phone_number}\n"
+    f"Message:\n{contact_us_message.message}",
+        EMAIL_HOST_USER,  # Sender's email address
+        ['tusingwiremartinrhinetreviz@gmail.com','sktechug@gmail.com'],  # Recipient's email address
         # html_message=message,
     )
 
