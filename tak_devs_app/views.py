@@ -6,6 +6,9 @@ from .serializers import ProjectSerializer, TeamMemberSerializer, TestimonialSer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework_api_key.permissions import HasAPIKey
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 class ProjectListView(generics.ListAPIView):
     queryset = Project.objects.all()
@@ -50,6 +53,49 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
     serializer_class = ContactUsMessageSerializer
     permission_classes = [HasAPIKey]
+
+    def perform_create(self, serializer):
+        # Extract data from the request
+        name = self.request.data.get('name')
+        subject = self.request.data.get('subject')
+        email = self.request.data.get('email')
+        message = self.request.data.get('message')
+        phone_number = self.request.data.get('phone_number')
+
+        print(name)
+        print(subject)
+        print(message)
+        print(email)
+
+        # Create a ContactUsMessage instance
+        contact_us_message = ContactUsMessage(
+            name=name,
+            subject=subject,
+            email=email,
+            message=message,
+            phone_number=phone_number
+        )
+
+        # Save the ContactUsMessage
+        contact_us_message.save()
+
+        # Send email notification
+        # send_contact_us_notification(contact_us_message)
+
+def send_contact_us_notification(contact_us_message):
+    # Compose the email subject and message
+    subject = 'New Contact Us Message'
+    message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
+    plain_message = strip_tags(message)
+
+    # Send the email
+    send_mail(
+        subject,
+        plain_message,
+        'your_email@example.com',  # Sender's email address
+        ['recipient@example.com'],  # Recipient's email address
+        html_message=message,
+    )
 
 class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()
