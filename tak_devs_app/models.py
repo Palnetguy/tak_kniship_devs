@@ -79,6 +79,7 @@ class WorkExperience(models.Model):
     no_of_clients = models.IntegerField()
     no_of_complete_projects = models.IntegerField()
     years_of_experience = models.IntegerField()
+    no_of_workers = models.IntegerField(default=2)
 
 class MobileApplication(models.Model):
     name = models.CharField(max_length=255)
