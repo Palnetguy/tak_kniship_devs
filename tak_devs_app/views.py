@@ -51,7 +51,7 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
     serializer_class = ContactUsMessageSerializer
     permission_classes = [HasAPIKey]
 
-class WorkExperienceDetailView(generics.RetrieveAPIView):
+class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()
     serializer_class = WorkExperienceSerializer
     permission_classes = [HasAPIKey]
