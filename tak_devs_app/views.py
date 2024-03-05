@@ -54,7 +54,7 @@ class FAQListView(generics.ListAPIView):
 class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
     serializer_class = ContactUsMessageSerializer
-    # permission_classes = [HasAPIKey]
+    permission_classes = [HasAPIKey]
 
     def perform_create(self, serializer):
         # Extract data from the request
@@ -85,8 +85,6 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
         send_contact_us_notification(contact_us_message)
 
 def send_contact_us_notification(contact_us_message):
-    # Compose the email subject and message
-    subject = 'New Contact Us Message'
     # message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
     # plain_message = strip_tags(message)
     print(contact_us_message.message)
