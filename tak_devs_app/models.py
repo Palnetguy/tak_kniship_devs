@@ -74,6 +74,15 @@ class ContactUsMessage(models.Model):
 
     def __str__(self):
         return self.subject
+    
+class ContactInfo(models.Model):
+    company_name = models.CharField(max_length=300)
+    location = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone_number = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.company_name
 
 class WorkExperience(models.Model):
     no_of_clients = models.IntegerField()

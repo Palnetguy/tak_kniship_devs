@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .models import ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):
@@ -28,6 +28,11 @@ class FAQSerializer(serializers.ModelSerializer):
 class ContactUsMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactUsMessage
+        fields = '__all__'
+
+class ContactInfoSeriliazer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactInfo
         fields = '__all__'
 
 class WorkExperienceSerializer(serializers.ModelSerializer):

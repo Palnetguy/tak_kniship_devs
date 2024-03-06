@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from tak_devs_app.models import FAQ, ContactUsMessage, DesktopApplication, Gallery, MobileApplication, Project, TeamMember, TechStack, Testimonial, WebApplication, WorkExperience
+from tak_devs_app.models import FAQ, ContactInfo, ContactUsMessage, DesktopApplication, Gallery, MobileApplication, Project, TeamMember, TechStack, Testimonial, WebApplication, WorkExperience
 
 admin.site.register(Project)
 admin.site.register(TeamMember)
@@ -13,3 +13,4 @@ admin.site.register(DesktopApplication)
 admin.site.register(WebApplication)
 admin.site.register(Gallery)
 admin.site.register(TechStack)
+admin.site.register(ContactInfo)

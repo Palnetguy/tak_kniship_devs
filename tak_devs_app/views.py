@@ -3,8 +3,8 @@
 from rest_framework import generics
 
 from tak_web.settings import EMAIL_HOST_USER
-from .models import Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
-from .serializers import ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
+from .models import ContactInfo, Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .serializers import ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework_api_key.permissions import HasAPIKey
@@ -50,6 +50,8 @@ class FAQListView(generics.ListAPIView):
     queryset = FAQ.objects.all()
     serializer_class = FAQSerializer
     permission_classes = [HasAPIKey]
+
+
 
 class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
@@ -102,6 +104,11 @@ def send_contact_us_notification(contact_us_message):
 class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()
     serializer_class = WorkExperienceSerializer
+    permission_classes = [HasAPIKey]
+
+class ContactInfoView(generics.ListAPIView):
+    queryset = ContactInfo.objects.all()
+    serializer_class = ContactInfoSeriliazer
     permission_classes = [HasAPIKey]
 
 class MobileApplicationListView(generics.ListAPIView):
