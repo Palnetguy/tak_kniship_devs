@@ -83,10 +83,25 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
         # Save the ContactUsMessage
         contact_us_message.save()
 
-        # Send email notification
+        # Send Client and Admins email notification
         send_contact_us_notification(contact_us_message)
+        send_admin_message_notification(contact_us_message)
 
 def send_contact_us_notification(contact_us_message):
+    subject = "Welcome to TAK Kniship Devs"
+    html_message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
+    # plain_message = strip_tags(html_message)
+    print(contact_us_message.message)
+    # Send the email
+    send_mail(
+        subject,
+       'Thank You for your Message. We will get back to you soon.',
+        EMAIL_HOST_USER,  # Sender's email address
+        ['tusingwiremartinrhinetreviz@gmail.com','sktechug@gmail.com'],  # Recipient's email address
+        html_message=html_message,
+    )
+
+def send_admin_message_notification(contact_us_message):
     # message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
     # plain_message = strip_tags(message)
     print(contact_us_message.message)
