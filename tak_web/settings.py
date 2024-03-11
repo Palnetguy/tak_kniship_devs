@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.100.6:3000",
+    "https://tak-kniship-devs.vercel.app"
     
 ]
 
