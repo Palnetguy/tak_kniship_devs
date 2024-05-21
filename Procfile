@@ -1,0 +1,1 @@
+web: gunicorn tak_web.wsgi

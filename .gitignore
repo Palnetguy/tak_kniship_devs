@@ -4,7 +4,7 @@
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
-.app_env/ 
+app_env/ 
 
 #Secret files
 .env
