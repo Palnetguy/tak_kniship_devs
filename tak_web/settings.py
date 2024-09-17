@@ -56,11 +56,13 @@ INSTALLED_APPS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.100.6:3000",
-    "https://tak-kinship-devs.vercel.app"
-    
+    "https://tak-kinship-devs.vercel.app"   
 ]
 
-# CORS_ALLOW_ALL_ORIGINS: True
+CSRF_TRUSTED_ORIGINS = [
+    'https://takkinship-backend.up.railway.app',
+    'http://takkinship-backend.up.railway.app'
+    ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -107,11 +109,11 @@ WSGI_APPLICATION = 'tak_web.wsgi.application'
 DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('RDS_NAME'),
-                'USER': config('RDS_USERNAME'),
-                'PASSWORD': config('RDS_PASSWORD'),
-                'HOST': config('RDS_HOST'),
-                'PORT': config('RDS_PORT')
+                'NAME': config('PGDATABASE'),
+                'USER': config('PGUSER'),
+                'PASSWORD': config('PGPASSWORD'),
+                'HOST': config('PGHOST'),
+                'PORT': config('PGPORT')
             }
     }
 
@@ -168,7 +170,7 @@ AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_CUSTOM_DOMAIN = '%s.s3.af-south-1.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.us-west-2.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_FILE_OVERWRITE = False
 
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
