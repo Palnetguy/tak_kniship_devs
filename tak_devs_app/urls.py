@@ -2,7 +2,7 @@
 
 from django.urls import path
 from .views import (
-    ContactInfoView, ProjectDetailWithApplicationsView, ProjectListView, TeamMemberListView, TestimonialListView,
+    ContactInfoView, PolicyDetailAgreement, ProjectDetailWithApplicationsView, ProjectListView, TeamMemberListView, TermsDetailAgreement, TestimonialListView,
     GalleryListView, FAQListView, ContactUsMessageCreateView,
     WorkExperienceDetailView, MobileApplicationListView,
     DesktopApplicationListView, WebApplicationListView
@@ -21,4 +21,6 @@ urlpatterns = [
     path('project/<int:project_id>/desktop-applications/', DesktopApplicationListView.as_view(), name='desktop-application-list'),
     path('project/<int:project_id>/web-applications/', WebApplicationListView.as_view(), name='web-application-list'),
     path('project/<int:pk>/', ProjectDetailWithApplicationsView.as_view(), name='project-detail-with-applications'),
+    path('projects/<int:project_id>/policy/', PolicyDetailAgreement.as_view(), name='policy-detail'),
+    path('projects/<int:project_id>/terms/', TermsDetailAgreement.as_view(), name='terms-detail'),
 ]

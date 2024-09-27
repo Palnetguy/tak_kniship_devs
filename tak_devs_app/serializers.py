@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .models import Agreement, ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):
@@ -73,4 +73,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
+        fields = '__all__'
+
+class AgreementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Agreement
         fields = '__all__'

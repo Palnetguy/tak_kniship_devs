@@ -3,8 +3,8 @@
 from rest_framework import generics
 
 from tak_web.settings import EMAIL_HOST_USER
-from .models import ContactInfo, Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
-from .serializers import ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
+from .models import Agreement, ContactInfo, Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .serializers import AgreementSerializer, ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework_api_key.permissions import HasAPIKey
@@ -27,6 +27,7 @@ class ProjectListView(generics.ListAPIView):
 class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    permission_classes = [HasAPIKey]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -35,6 +36,25 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
         context['web_applications'] = WebApplication.objects.filter(project=self.get_object())
         print(context)
         return context
+    
+class PolicyDetailAgreement(generics.RetrieveAPIView):
+    queryset = Agreement.objects.all()
+    serializer_class = AgreementSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return Agreement.objects.filter(project__id=project_id, agreement_type='Policy' )
+    
+class TermsDetailAgreement(generics.RetrieveAPIView):
+    queryset = Agreement.objects.all()
+    serializer_class = AgreementSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return Agreement.objects.filter(project__id=project_id, agreement_type='Terms')
+   
 
 
 class TeamMemberListView(generics.ListAPIView):

@@ -30,6 +30,21 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+    
+class Agreement(models.Model):
+    AGREEMENT_TYPE_CHOICES = [
+        ('Terms', 'Terms'),
+        ('Policy', 'Policy'),
+       
+    ]
+    title = models.CharField(max_length=255)
+    agreement_type = models.CharField(max_length=20, choices=AGREEMENT_TYPE_CHOICES)
+    description = models.TextField()
+    project = models.ForeignKey(Project,on_delete=models.CASCADE)
+    date_published = models.DateField()
+
+    def __str__(self):
+        return "{self.project.title} - {self.type}"
      
 class TeamMember(models.Model):
     profile_picture = models.ImageField(upload_to='team_images')
@@ -135,6 +150,3 @@ class WebApplication(models.Model):
     def __str__(self):
         return self.name
 
-
-# class User(AbstractUser, AbstractAPIKey):
-#     pass
