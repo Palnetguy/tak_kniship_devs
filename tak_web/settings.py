@@ -56,7 +56,9 @@ INSTALLED_APPS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.100.6:3000",
-    "https://tak-kinship-devs.vercel.app"   
+    "https://tak-kinship-devs.vercel.app",
+    "https://www.takkinship.com",  
+    "https://takkinship.com",  
 ]
 
 CSRF_TRUSTED_ORIGINS = [
