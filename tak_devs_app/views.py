@@ -1,5 +1,6 @@
 # views.py
 
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 
 from tak_web.settings import EMAIL_HOST_USER
@@ -38,22 +39,25 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
         return context
     
 class PolicyDetailAgreement(generics.RetrieveAPIView):
-    queryset = Agreement.objects.all()
+    # queryset = Agreement.objects.all()
     serializer_class = AgreementSerializer
     permission_classes = [HasAPIKey]
 
-    def get_queryset(self):
+    # def get_queryset(self):
+    #     project_id = self.kwargs.get('project_id')
+    #     return Agreement.objects.filter(project__id=project_id, agreement_type='Policy' )
+    
+    def get_object(self):
         project_id = self.kwargs.get('project_id')
-        return Agreement.objects.filter(project__id=project_id, agreement_type='Policy' )
+        return get_object_or_404(Agreement, project__id=project_id, agreement_type='Policy')
     
 class TermsDetailAgreement(generics.RetrieveAPIView):
-    queryset = Agreement.objects.all()
     serializer_class = AgreementSerializer
     permission_classes = [HasAPIKey]
 
-    def get_queryset(self):
+    def get_object(self):
         project_id = self.kwargs.get('project_id')
-        return Agreement.objects.filter(project__id=project_id, agreement_type='Terms')
+        return get_object_or_404(Agreement, project__id=project_id, agreement_type='Terms')
    
 
 

@@ -44,7 +44,7 @@ class Agreement(models.Model):
     date_published = models.DateField()
 
     def __str__(self):
-        return "{self.project.title} - {self.type}"
+        return f"{self.project.title} - {self.agreement_type}"
      
 class TeamMember(models.Model):
     profile_picture = models.ImageField(upload_to='team_images')
