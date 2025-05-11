@@ -9,6 +9,19 @@ class ApiKeyMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Skip API key check for documentation routes
+        if request.path.startswith('/swagger') or request.path.startswith('/redoc') or request.path.startswith('/admin'):
+            return self.get_response(request)
+            
+        # Skip API key check for OPTIONS requests (CORS preflight)
+        if request.method == 'OPTIONS':
+            return self.get_response(request)
+            
+        # Skip for health check
+        if request.path == '/health/':
+            return self.get_response(request)
+        
+        # Check for API key
         api_key = request.headers.get('X-API-Key')
 
         if not api_key:

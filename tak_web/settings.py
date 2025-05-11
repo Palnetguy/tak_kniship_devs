@@ -54,6 +54,28 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
+# Add/update these settings in your settings.py
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'X-API-Key': {
+            'type': 'apiKey',
+            'name': 'X-API-Key',
+            'in': 'header'
+        }
+    },
+    'VALIDATOR_URL': None,
+    'DEFAULT_MODEL_RENDERING': 'example',
+    'OPERATIONS_SORTER': 'alpha',
+}
+
+REDOC_SETTINGS = {
+    'LAZY_RENDERING': False,
+    'HIDE_HOSTNAME': False,
+    'EXPAND_RESPONSES': '200,201',
+}
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.100.6:3000",

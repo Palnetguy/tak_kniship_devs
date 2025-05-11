@@ -137,7 +137,7 @@ class MobileApplication(models.Model):
     download_id =  models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     date_released = models.DateField(auto_now=True, blank=True)
-    project = models.ForeignKey(Project,on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='mobile_applications')
 
     def __str__(self):
         return self.name
@@ -151,7 +151,7 @@ class DesktopApplication(models.Model):
     download_id =  models.CharField(max_length=100,blank=True)
     description = models.TextField(blank=True)
     date_released = models.DateField(auto_now=True, blank=True)
-    project = models.ForeignKey(Project,on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='desktop_applications')
 
     def __str__(self):
         return self.name
@@ -160,7 +160,7 @@ class WebApplication(models.Model):
     name = models.CharField(max_length=255)
     icon = models.ImageField(upload_to='WebApp_Icons/')
     url = models.URLField()
-    project = models.ForeignKey(Project,on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='web_applications')
 
     def __str__(self):
         return self.name

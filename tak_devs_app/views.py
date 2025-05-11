@@ -12,6 +12,7 @@ from rest_framework_api_key.permissions import HasAPIKey
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from drf_yasg.utils import swagger_auto_schema
 
 from django.http import HttpResponse
 
@@ -20,17 +21,32 @@ def health_check(request):
     return HttpResponse("OK", status=200)
 
 class ProjectListView(generics.ListAPIView):
+    """
+    Lists all projects with their features, tech stack, and client information.
+    """
+    queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [HasAPIKey]
 
-    def get_queryset(self):
-        return Project.objects.prefetch_related(
-            'tech_stack',
-            'mobileapplication_set',
-            'desktopapplication_set',
-            'webapplication_set'
-        ).all()
+    @swagger_auto_schema(
+        operation_description="Get a list of all projects",
+        responses={200: ProjectSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
+class ProjectDetailView(generics.RetrieveAPIView):
+    """
+    Retrieves details for a specific project.
+    """
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+
+    @swagger_auto_schema(
+        operation_description="Get details of a specific project",
+        responses={200: ProjectSerializer()}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
     serializer_class = ProjectSerializer

@@ -61,33 +61,44 @@ class WebApplicationSerializer(serializers.ModelSerializer):
 class TechStackSerializer(serializers.ModelSerializer):
     class Meta:
         model = TechStack
-        fields = ('language',)
+        fields = ('id', 'language')
 
 class ProjectFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectFeature
-        fields = ('title', 'description')
+        fields = ('id', 'title', 'description')
 
 class ProjectClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectClient
-        fields = ('name', 'location', 'rating', 'message')
+        fields = ('id', 'name', 'location', 'rating', 'message')
 
 class ProjectSerializer(serializers.ModelSerializer):
     mobile_applications = MobileApplicationSerializer(many=True, read_only=True)
     desktop_applications = DesktopApplicationSerializer(many=True, read_only=True)
     web_applications = WebApplicationSerializer(many=True, read_only=True)
-    tech_stack = TechStackSerializer(many=True)
+    tech_stack = TechStackSerializer(many=True, read_only=True)
     features = ProjectFeatureSerializer(many=True, read_only=True)
     client = ProjectClientSerializer(read_only=True)
 
     class Meta:
         model = Project
         fields = (
-            'id', 'title', 'type', 'project_background_image', 'tech_stack',
-            'quote', 'about_project', 'challenges_faced', 'project_category',
-            'date_published', 'duration_of_development', 'features', 'client',
-            'mobile_applications', 'desktop_applications', 'web_applications'
+            'id', 
+            'title', 
+            'project_category', 
+            'project_background_image',
+            'tech_stack', 
+            'quote', 
+            'about_project', 
+            'challenges_faced',
+            'date_published', 
+            'duration_of_development', 
+            'features', 
+            'client',
+            'mobile_applications',
+            'desktop_applications',
+            'web_applications'
         )
 
 class AgreementSerializer(serializers.ModelSerializer):
