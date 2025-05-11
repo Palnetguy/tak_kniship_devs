@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'tak_devs_app',
     "corsheaders",
+    'drf_yasg',
 ]
 
 CORS_ALLOWED_ORIGINS = [

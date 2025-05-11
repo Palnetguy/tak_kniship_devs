@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Agreement, ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .models import Agreement, ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication, ProjectFeature, ProjectClient
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):
@@ -63,17 +63,32 @@ class TechStackSerializer(serializers.ModelSerializer):
         model = TechStack
         fields = ('language',)
 
+class ProjectFeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectFeature
+        fields = ('title', 'description')
+
+class ProjectClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectClient
+        fields = ('name', 'location', 'rating', 'message')
+
 class ProjectSerializer(serializers.ModelSerializer):
     mobile_applications = MobileApplicationSerializer(many=True, read_only=True)
     desktop_applications = DesktopApplicationSerializer(many=True, read_only=True)
     web_applications = WebApplicationSerializer(many=True, read_only=True)
     tech_stack = TechStackSerializer(many=True)
-    # project_background_image =  serializers.CharField(source='project_background_image.public_id', read_only=True)
-
+    features = ProjectFeatureSerializer(many=True, read_only=True)
+    client = ProjectClientSerializer(read_only=True)
 
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = (
+            'id', 'title', 'type', 'project_background_image', 'tech_stack',
+            'quote', 'about_project', 'challenges_faced', 'project_category',
+            'date_published', 'duration_of_development', 'features', 'client',
+            'mobile_applications', 'desktop_applications', 'web_applications'
+        )
 
 class AgreementSerializer(serializers.ModelSerializer):
     class Meta:

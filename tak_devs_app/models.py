@@ -12,25 +12,34 @@ class TechStack(models.Model):
         return self.language
 
 class Project(models.Model):
-    PROJECT_TYPE_CHOICES = [
+    PROJECT_CATEGORY_CHOICES = [
         ('Mobile App', 'Mobile App'),
-        ('Web', 'Web'),
-        ('Desktop', 'Desktop'),
+        ('Web Application', 'Web Application'),
+        ('Desktop Application', 'Desktop Application'),
     ]
-    title = models.CharField(max_length=255)
-    type = models.CharField(max_length=20, choices=PROJECT_TYPE_CHOICES)
+    title = models.CharField(max_length=255, db_index=True)
+    project_category = models.CharField(
+        max_length=50, 
+        choices=PROJECT_CATEGORY_CHOICES, 
+        db_index=True
+    )
     project_background_image = models.ImageField(upload_to='project_images')
-    tech_stack =  models.ManyToManyField(TechStack,null=True, blank=True)
-    description = models.TextField()
-    project_goals = models.TextField()
-    target_audience = models.TextField()
-    project_category = models.CharField(max_length=100)
-    date_published = models.DateField()
+    tech_stack = models.ManyToManyField(TechStack, blank=True)
+    quote = models.CharField(max_length=255, blank=True)
+    about_project = models.TextField()
+    challenges_faced = models.TextField(blank=True)
+    date_published = models.DateField(db_index=True)
     duration_of_development = models.IntegerField()
 
     def __str__(self):
         return self.title
     
+    class Meta:
+        indexes = [
+            models.Index(fields=['project_category']),
+            models.Index(fields=['date_published']),
+        ]
+
 class Agreement(models.Model):
     AGREEMENT_TYPE_CHOICES = [
         ('Terms', 'Terms'),
@@ -48,12 +57,13 @@ class Agreement(models.Model):
      
 class TeamMember(models.Model):
     profile_picture = models.ImageField(upload_to='team_images')
-    name = models.CharField(max_length=100)
-    role = models.CharField(max_length=50)
+    name = models.CharField(max_length=100, db_index=True)
+    role = models.CharField(max_length=50, db_index=True)
+    biography = models.TextField(blank=True)  # New field added
     instagram = models.CharField(max_length=100)
     linkedin = models.CharField(max_length=100)
     twitter = models.CharField(max_length=100)
-    skype = models.CharField(max_length=100)
+  
 
     def __str__(self):
         return self.name
@@ -90,6 +100,11 @@ class ContactUsMessage(models.Model):
     def __str__(self):
         return self.subject
     
+    class Meta:
+        indexes = [
+            models.Index(fields=['date_sent']),
+        ]
+
 class ContactInfo(models.Model):
     company_name = models.CharField(max_length=300)
     location = models.CharField(max_length=255)
@@ -149,4 +164,23 @@ class WebApplication(models.Model):
 
     def __str__(self):
         return self.name
+
+# Add these new models
+class ProjectFeature(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='features')
+
+    def __str__(self):
+        return f"{self.project.title} - {self.title}"
+
+class ProjectClient(models.Model):
+    name = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])  # 1-5 rating
+    message = models.TextField()
+    project = models.OneToOneField('Project', on_delete=models.CASCADE, related_name='client')
+
+    def __str__(self):
+        return f"{self.project.title} - {self.name}"
 
