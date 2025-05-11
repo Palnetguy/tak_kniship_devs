@@ -55,9 +55,11 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
     def get_queryset(self):
         return Project.objects.prefetch_related(
             'tech_stack',
-            'mobileapplication_set',
-            'desktopapplication_set',
-            'webapplication_set'
+            'mobile_applications',  # Changed from mobileapplication_set
+            'desktop_applications',  # Changed from desktopapplication_set
+            'web_applications',     # Changed from webapplication_set
+            'features',            # Added features
+            'client'              # Added client
         )
 
     
