@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from .models import (
     FAQ, Agreement, ContactInfo, ContactUsMessage, DesktopApplication,
     Gallery, MobileApplication, Project, TeamMember, TechStack,
-    Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient
+    Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient, ProjectImage
 )
 
 class ProjectFeatureInline(admin.TabularInline):
@@ -13,6 +13,10 @@ class ProjectFeatureInline(admin.TabularInline):
 class ProjectClientInline(admin.StackedInline):
     model = ProjectClient
 
+class ProjectImageInline(admin.TabularInline):
+    model = ProjectImage
+    extra = 1
+
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'project_category', 'date_published', 'duration_of_development', 'display_tech_stack')
@@ -20,7 +24,7 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ('title', 'about_project', 'quote')
     filter_horizontal = ('tech_stack',)
     date_hierarchy = 'date_published'
-    inlines = [ProjectFeatureInline, ProjectClientInline]
+    inlines = [ProjectImageInline, ProjectFeatureInline, ProjectClientInline]
 
     def display_tech_stack(self, obj):
         return ", ".join([tech.language for tech in obj.tech_stack.all()])

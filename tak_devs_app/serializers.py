@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Agreement, ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication, ProjectFeature, ProjectClient
+from .models import Agreement, ContactInfo, Project, TeamMember, TechStack, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication, ProjectFeature, ProjectClient, ProjectImage
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):
@@ -73,6 +73,11 @@ class ProjectClientSerializer(serializers.ModelSerializer):
         model = ProjectClient
         fields = ('id', 'name', 'location', 'rating', 'message', 'profile_image')
 
+class ProjectImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImage
+        fields = ('id', 'image', 'image_type', 'caption', 'order')
+
 class ProjectSerializer(serializers.ModelSerializer):
     mobile_applications = MobileApplicationSerializer(many=True, read_only=True)
     desktop_applications = DesktopApplicationSerializer(many=True, read_only=True)
@@ -80,6 +85,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     tech_stack = TechStackSerializer(many=True, read_only=True)
     features = ProjectFeatureSerializer(many=True, read_only=True)
     client = ProjectClientSerializer(read_only=True)
+    images = ProjectImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Project
@@ -87,7 +93,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'id', 
             'title', 
             'project_category', 
-            'project_background_image',
+            'images',
             'tech_stack', 
             'quote', 
             'about_project', 

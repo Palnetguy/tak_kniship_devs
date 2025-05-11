@@ -23,13 +23,28 @@ class Project(models.Model):
         choices=PROJECT_CATEGORY_CHOICES, 
         db_index=True
     )
-    project_background_image = models.ImageField(upload_to='project_images')
     tech_stack = models.ManyToManyField(TechStack, blank=True)
     quote = models.CharField(max_length=255, blank=True)
     about_project = models.TextField()
     challenges_faced = models.TextField(blank=True)
     date_published = models.DateField(db_index=True)
     duration_of_development = models.IntegerField()
+
+    @property
+    def background_image(self):
+        return self.images.filter(image_type='background').first()
+
+    @property
+    def about_images(self):
+        return self.images.filter(image_type='about')
+
+    @property
+    def challenge_images(self):
+        return self.images.filter(image_type='challenge')
+
+    @property
+    def gallery_images(self):
+        return self.images.filter(image_type='gallery')
 
     def __str__(self):
         return self.title
@@ -39,6 +54,25 @@ class Project(models.Model):
             models.Index(fields=['project_category']),
             models.Index(fields=['date_published']),
         ]
+
+class ProjectImage(models.Model):
+    IMAGE_TYPE_CHOICES = [
+        ('background', 'Background Image'),
+        ('about', 'About Image'),
+        ('challenge', 'Challenge Image')
+    ]
+    
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='project_images')
+    image = models.ImageField(upload_to='project_images/')
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPE_CHOICES)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['image_type']),
+        ]
+
+    def __str__(self):
+        return f"{self.project.title} - {self.get_image_type_display()}"
 
 class Agreement(models.Model):
     AGREEMENT_TYPE_CHOICES = [
