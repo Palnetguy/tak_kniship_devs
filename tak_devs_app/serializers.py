@@ -92,7 +92,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     tech_stack = TechStackSerializer(many=True, read_only=True)
     features = ProjectFeatureSerializer(many=True, read_only=True)
     client = ProjectClientSerializer(read_only=True)
-    images = ProjectImageSerializer(many=True, read_only=True)
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -113,6 +113,13 @@ class ProjectSerializer(serializers.ModelSerializer):
             'desktop_applications',
             'web_applications'
         )
+
+    def get_images(self, obj):
+        return {
+            'background': obj.images.filter(image_type='background').first().image.url if obj.images.filter(image_type='background').first() else None,
+            'about': obj.images.filter(image_type='about').first().image.url if obj.images.filter(image_type='about').first() else None,
+            'challenge': obj.images.filter(image_type='challenge').first().image.url if obj.images.filter(image_type='challenge').first() else None
+        }
 
 class AgreementSerializer(serializers.ModelSerializer):
     class Meta:
