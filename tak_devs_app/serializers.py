@@ -74,9 +74,16 @@ class ProjectClientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'location', 'rating', 'message', 'profile_image')
 
 class ProjectImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProjectImage
-        fields = ('id', 'image', 'image_type', 'caption', 'order')
+        fields = ('id', 'image', 'image_url', 'image_type', 'caption', 'order')
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
 
 class ProjectSerializer(serializers.ModelSerializer):
     mobile_applications = MobileApplicationSerializer(many=True, read_only=True)

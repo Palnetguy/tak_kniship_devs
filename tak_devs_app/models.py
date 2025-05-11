@@ -62,9 +62,11 @@ class ProjectImage(models.Model):
         ('challenge', 'Challenge Image')
     ]
     
-    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='project_images')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='images')  # Make sure related_name is 'images'
     image = models.ImageField(upload_to='project_images/')
     image_type = models.CharField(max_length=20, choices=IMAGE_TYPE_CHOICES)
+    caption = models.CharField(max_length=255, blank=True)
+    order = models.PositiveIntegerField(default=0)
 
     class Meta:
         indexes = [
