@@ -6,6 +6,13 @@ from .models import (
     Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient, ProjectImage
 )
 
+class ProjectImageInline(admin.TabularInline):
+    model = ProjectImage
+    extra = 1
+    fields = ('image', 'image_type', 'caption', 'order')
+    min_num = 0
+    max_num = 10
+
 class ProjectFeatureInline(admin.TabularInline):
     model = ProjectFeature
     extra = 1
@@ -13,22 +20,26 @@ class ProjectFeatureInline(admin.TabularInline):
 class ProjectClientInline(admin.StackedInline):
     model = ProjectClient
 
-class ProjectImageInline(admin.TabularInline):
-    model = ProjectImage
-    extra = 1
-
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'project_category', 'date_published', 'duration_of_development', 'display_tech_stack')
+    list_display = ('title', 'project_category', 'date_published')
     list_filter = ('project_category', 'date_published')
-    search_fields = ('title', 'about_project', 'quote')
+    search_fields = ('title', 'about_project')
     filter_horizontal = ('tech_stack',)
-    date_hierarchy = 'date_published'
     inlines = [ProjectImageInline, ProjectFeatureInline, ProjectClientInline]
 
-    def display_tech_stack(self, obj):
-        return ", ".join([tech.language for tech in obj.tech_stack.all()])
-    display_tech_stack.short_description = 'Tech Stack'
+@admin.register(ProjectImage)
+class ProjectImageAdmin(admin.ModelAdmin):
+    list_display = ('project', 'image_type', 'display_image', 'order')
+    list_filter = ('image_type', 'project')
+    search_fields = ('project__title', 'caption')
+    ordering = ('order',)
+
+    def display_image(self, obj):
+        if (obj.image):
+            return format_html('<img src="{}" width="50" height="50" />', obj.image.url)
+        return ""
+    display_image.short_description = 'Preview'
 
 @admin.register(ProjectFeature)
 class ProjectFeatureAdmin(admin.ModelAdmin):
