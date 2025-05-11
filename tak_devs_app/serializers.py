@@ -71,7 +71,7 @@ class ProjectFeatureSerializer(serializers.ModelSerializer):
 class ProjectClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectClient
-        fields = ('id', 'name', 'location', 'rating', 'message')
+        fields = ('id', 'name', 'location', 'rating', 'message', 'profile_image')
 
 class ProjectSerializer(serializers.ModelSerializer):
     mobile_applications = MobileApplicationSerializer(many=True, read_only=True)
