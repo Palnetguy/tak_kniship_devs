@@ -152,7 +152,7 @@ def send_contact_us_notification(contact_us_message):
         subject,
        'Thank You for your Message. We will get back to you soon.',
         EMAIL_HOST_USER,  # Sender's email address
-        ['tusingwiremartinrhinetreviz@gmail.com','sktechug@gmail.com'],  # Recipient's email address
+        [contact_us_message.email],  # Recipient's email address
         html_message=html_message,
     )
 
