@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Contact Form Submission | TAK Kinship</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        --brand-color: #1fa84f;
+        --dark-color: #202020;
+        --light-color: #f8f6f4;
+        --secondary-color: #5e5e5e;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Outfit", sans-serif;
+        line-height: 1.6;
+        color: var(--secondary-color);
+        background-color: #f5f5f5;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+
+      .header {
+        background-color: var(--brand-color);
+        padding: 20px;
+        text-align: center;
+      }
+
+      .header h1 {
+        color: #ffffff;
+        font-size: 24px;
+        margin: 0;
+      }
+
+      .content {
+        padding: 30px 25px;
+        background-color: #ffffff;
+      }
+
+      .alert {
+        background-color: #f8f9fa;
+        border-left: 4px solid var(--brand-color);
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+
+      .contact-details {
+        margin-bottom: 25px;
+      }
+
+      .contact-details h3 {
+        color: var(--dark-color);
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+
+      .contact-field {
+        margin-bottom: 10px;
+      }
+
+      .contact-field strong {
+        color: var(--dark-color);
+        display: inline-block;
+        width: 100px;
+        font-weight: 600;
+      }
+
+      .message-content {
+        margin-top: 20px;
+      }
+
+      .message-content h3 {
+        color: var(--dark-color);
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      .message-box {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #eee;
+      }
+
+      .action-button {
+        display: inline-block;
+        background-color: var(--brand-color);
+        color: #ffffff !important;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        margin: 20px 0;
+      }
+
+      .footer {
+        background-color: #f8f9fa;
+        padding: 15px;
+        text-align: center;
+        font-size: 14px;
+        color: #777;
+        border-top: 1px solid #eee;
+      }
+    </style>
+  </head>
+  <body style="background-color: #f5f5f5; margin: 0; padding: 0;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f5f5f5;">
+      <tr>
+        <td align="center">
+          <div class="email-container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <div class="header" style="background-color: #1fa84f; padding: 20px; text-align: center;">
+              <h1 style="color: #ffffff; font-size: 24px; margin: 0;">New Contact Form Submission</h1>
+            </div>
+            
+            <div class="content" style="padding: 30px 25px; background-color: #ffffff;">
+              <div class="alert" style="background-color: #f8f9fa; border-left: 4px solid #1fa84f; padding: 15px; margin-bottom: 20px;">
+                <p>You have received a new message from the contact form on your website.</p>
+              </div>
+              
+              <div class="contact-details" style="margin-bottom: 25px;">
+                <h3 style="color: #202020; margin-bottom: 15px; font-size: 18px;">Contact Information</h3>
+                
+                <div class="contact-field" style="margin-bottom: 10px;">
+                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Name:</strong> {{ contact_us_message.name }}
+                </div>
+                
+                <div class="contact-field" style="margin-bottom: 10px;">
+                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Email:</strong> <a href="mailto:{{ contact_us_message.email }}" style="color: #1fa84f;">{{ contact_us_message.email }}</a>
+                </div>
+                
+                <div class="contact-field" style="margin-bottom: 10px;">
+                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Phone:</strong> {{ contact_us_message.phone_number|default:"Not provided" }}
+                </div>
+                
+                <div class="contact-field" style="margin-bottom: 10px;">
+                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Subject:</strong> {{ contact_us_message.subject }}
+                </div>
+                
+                <div class="contact-field" style="margin-bottom: 10px;">
+                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Time:</strong> {{ contact_us_message.created_at|date:"F j, Y, g:i a" }}
+                </div>
+              </div>
+              
+              <div class="message-content" style="margin-top: 20px;">
+                <h3 style="color: #202020; margin-bottom: 10px; font-size: 18px;">Message</h3>
+                <div class="message-box" style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
+                  <p>{{ contact_us_message.message }}</p>
+                </div>
+              </div>
+              
+              <a href="{{ site_url }}{% url 'admin:tak_devs_app_contactusmessage_change' contact_us_message.id %}" class="action-button" style="display: inline-block; background-color: #1fa84f; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0;">View in Admin</a>
+            </div>
+            
+            <div class="footer" style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 14px; color: #777; border-top: 1px solid #eee;">
+              <p>This is an automated message from your website's contact form.</p>
+              <p>&copy; {% now "Y" %} TAK Kinship Technologies</p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

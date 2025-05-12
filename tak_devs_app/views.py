@@ -153,32 +153,37 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
         send_admin_message_notification(contact_us_message)
 
 def send_contact_us_notification(contact_us_message):
-    subject = "Welcome to TAK Kniship Devs"
-    html_message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
-    # plain_message = strip_tags(html_message)
-    print(contact_us_message.message)
-    # Send the email
+    """Send a nicely formatted email to the person who submitted the contact form"""
+    subject = "Thank you for contacting TAK Kinship Technologies"
+    html_message = render_to_string('email/contact_us_notification_email.html', {
+        'contact_us_message': contact_us_message
+    })
+    plain_message = strip_tags(html_message)
+    
     send_mail(
         subject,
-       'Thank You for your Message. We will get back to you soon.',
-        EMAIL_HOST_USER,  # Sender's email address
+        plain_message,
+        settings.EMAIL_HOST_USER,  # Sender's email address
         [contact_us_message.email],  # Recipient's email address
         html_message=html_message,
+        fail_silently=False,
     )
 
 def send_admin_message_notification(contact_us_message):
-    # message = render_to_string('email/contact_us_notification_email.html', {'contact_us_message': contact_us_message})
-    # plain_message = strip_tags(message)
-    print(contact_us_message.message)
-    # Send the email
+    """Send a well-structured notification to admins when a new contact form is submitted"""
+    subject = f"New Contact Form: {contact_us_message.subject}"
+    html_message = render_to_string('email/admin_contact_notification_email.html', {
+        'contact_us_message': contact_us_message
+    })
+    plain_message = strip_tags(html_message)
+    
     send_mail(
-        contact_us_message.subject,
-        f"Hello,\n{contact_us_message.name} has sent a message:\n"
-    f"Phone number: {contact_us_message.phone_number}\n"
-    f"Message:\n{contact_us_message.message}",
-        EMAIL_HOST_USER,  # Sender's email address
-        ['tusingwiremartinrhinetreviz@gmail.com','sktechug@gmail.com'],  # Recipient's email address
-        # html_message=message,
+        subject,
+        plain_message,
+        settings.EMAIL_HOST_USER,  # Sender's email address
+        ['tusingwiremartinrhinetreviz@gmail.com', 'sktechug@gmail.com'],  # Admin email addresses
+        html_message=html_message,
+        fail_silently=False,
     )
 
 class WorkExperienceDetailView(generics.ListAPIView):

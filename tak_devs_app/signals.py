@@ -3,7 +3,8 @@ from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from .models import Project, Agreement, Testimonial, ProjectClient
+from django.utils.html import strip_tags
+from .models import ContactUsMessage, Project, Agreement, Testimonial, ProjectClient
 
 # Define default policy text as constants
 POLICY_DEFAULT_TEXT = """1. Information We Collect
@@ -207,3 +208,50 @@ def create_agreements(sender, instance, created, **kwargs):
             project=instance,
             date_published=instance.date_published
         )
+
+@receiver(post_save, sender=ContactUsMessage)
+def notify_admin_contact_form(sender, instance, created, **kwargs):
+    """Send notification to admins when a new contact form is submitted"""
+    if created:
+        subject = f"New Contact Form: {instance.subject}"
+        
+        html_message = render_to_string('email/admin_contact_notification_email.html', {
+            'contact_us_message': instance,
+            'site_url': settings.SITE_URL,
+        })
+        
+        plain_message = strip_tags(html_message)
+        
+        # Get admin emails from settings
+        admin_emails = getattr(settings, 'ADMIN_EMAILS', [])
+        
+        # Ensure we have recipients
+        if admin_emails:
+            send_mail(
+                subject,
+                plain_message,
+                settings.EMAIL_HOST_USER,
+                ['tusingwiremartinrhinetreviz@gmail.com', 'sktechug@gmail.com'],  # Now this is a properly formatted list of emails
+                html_message=html_message,
+                fail_silently=True,  # Set to True to prevent exceptions breaking the flow
+            )
+
+        # Also send a confirmation email to the person who submitted the form
+        client_subject = "Thank you for contacting TAK Kinship Technologies"
+        client_html_message = render_to_string('email/contact_us_notification_email.html', {
+            'contact_us_message': instance
+        })
+        client_plain_message = strip_tags(client_html_message)
+        
+        try:
+            send_mail(
+                client_subject,
+                client_plain_message,
+                settings.EMAIL_HOST_USER,
+                [instance.email],
+                html_message=client_html_message,
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Error sending confirmation email: {str(e)}")
+
