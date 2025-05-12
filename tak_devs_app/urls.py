@@ -2,10 +2,12 @@
 
 from django.urls import path
 from .views import (
-    ContactInfoView, PolicyDetailAgreement, ProjectDetailWithApplicationsView, ProjectListView, TeamMemberListView, TermsDetailAgreement, TestimonialListView,
+    ContactInfoView, PolicyDetailAgreement, ProjectDetailWithApplicationsView, ProjectListView, 
+    TeamMemberListView, TermsDetailAgreement, TestimonialListView,
     GalleryListView, FAQListView, ContactUsMessageCreateView,
     WorkExperienceDetailView, MobileApplicationListView,
-    DesktopApplicationListView, WebApplicationListView
+    DesktopApplicationListView, WebApplicationListView,
+    testimonial_form, client_feedback_form
 )
 
 urlpatterns = [
@@ -23,4 +25,8 @@ urlpatterns = [
     path('project/<int:pk>/', ProjectDetailWithApplicationsView.as_view(), name='project-detail-with-applications'),
     path('projects/<int:project_id>/policy/', PolicyDetailAgreement.as_view(), name='policy-detail'),
     path('projects/<int:project_id>/terms/', TermsDetailAgreement.as_view(), name='terms-detail'),
+    
+    # Form URLs
+    path('testimonials/submit/', testimonial_form, name='testimonial_form'),
+    path('feedback/<int:project_id>/<str:token>/', client_feedback_form, name='client_feedback_form'),
 ]

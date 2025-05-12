@@ -3,6 +3,8 @@ from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission, Group
 from django.contrib.auth.models import AbstractUser
 from rest_framework_api_key.models import AbstractAPIKey
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class TechStack(models.Model):
@@ -90,7 +92,11 @@ class Agreement(models.Model):
 
     def __str__(self):
         return f"{self.project.title} - {self.agreement_type}"
-     
+
+
+
+
+
 class TeamMember(models.Model):
     profile_picture = models.ImageField(upload_to='team_images')
     name = models.CharField(max_length=100, db_index=True)

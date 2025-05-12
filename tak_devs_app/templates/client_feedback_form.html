@@ -1,0 +1,263 @@
+{% extends "dark_base.html" %}
+{% load static %}
+
+{% block title %}Project Feedback | {{ project.title }} | TAK Kinship{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <div class="box">
+    <div class="form-header">
+      <img
+        src="https://tak-kinship-bkt.s3.us-west-2.amazonaws.com/logo.png"
+        alt="TAK Kinship"
+        class="logo-image"
+      />
+      <h1 class="title">{{ project.title }}</h1>
+      <p class="pretitle">Client Feedback</p>
+      <p>
+        Thank you for choosing TAK Kinship Technologies for your project. We value your
+        feedback!
+      </p>
+    </div>
+
+    {% if form_submitted %}
+    <div class="success-message">
+      <div class="success-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h3>Thank You!</h3>
+      <p>
+        Your feedback has been submitted successfully. We truly appreciate your
+        time and insights.
+      </p>
+      <a href="https://www.takkinship.com" class="btn">
+        <p>Visit Our Website</p>
+      </a>
+    </div>
+    {% else %}
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="project" value="{{ project.id }}" />
+
+      <div class="form-group">
+        <label for="{{ form.name.id_for_label }}" class="form-label">
+          Your Name
+        </label>
+        {{ form.name }} 
+        {% if form.name.errors %}
+        <div class="error-feedback">
+          {% for error in form.name.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.location.id_for_label }}" class="form-label">
+          Your Location
+        </label>
+        {{ form.location }} 
+        {% if form.location.errors %}
+        <div class="error-feedback">
+          {% for error in form.location.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Your Rating</label>
+        <div class="rating-stars">
+          <div id="rating-container" class="rating-container">
+            {% for i in "12345" %}
+            <div class="rating-option">
+              <input 
+                class="visually-hidden" 
+                type="radio" 
+                name="rating"
+                id="rating{{ i }}" 
+                value="{{ i }}" 
+                {% if form.rating.value == i %}checked{% endif %}
+              >
+              <label class="rating-star" for="rating{{ i }}">
+                <i class="bi bi-star-fill"></i>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% if form.rating.errors %}
+        <div class="error-feedback">
+          {% for error in form.rating.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.message.id_for_label }}" class="form-label">
+          Your Message
+        </label>
+        {{ form.message }} 
+        {% if form.message.errors %}
+        <div class="error-feedback">
+          {% for error in form.message.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.profile_image.id_for_label }}" class="form-label">
+          Profile Photo (Optional)
+        </label>
+        {{ form.profile_image }} 
+        {% if form.profile_image.errors %}
+        <div class="error-feedback">
+          {% for error in form.profile_image.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn" id="submitButton">
+        <p id="submitText">Submit Feedback</p>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--brand-color);
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .btn.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn.disabled::after,
+  .btn.disabled::before {
+    display: none;
+  }
+
+  .btn.disabled:hover p {
+    color: #151515;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Make form controls prettier
+    const formControls = document.querySelectorAll(
+      'input[type="text"], input[type="email"], textarea, select, input[type="file"]'
+    );
+    formControls.forEach((control) => {
+      control.classList.add("form-control");
+    });
+
+    // Form submission handler with progress indicator
+    const form = document.querySelector("form");
+    const submitButton = document.getElementById("submitButton");
+    const submitText = document.getElementById("submitText");
+
+    if (form) {
+      form.addEventListener("submit", function (event) {
+        // Disable the button
+        submitButton.classList.add("disabled");
+        submitButton.disabled = true;
+
+        // Change button text and add spinner
+        const spinner = document.createElement("span");
+        spinner.className = "loading-spinner";
+        submitText.innerText = " Submitting...";
+        submitText.prepend(spinner);
+      });
+    }
+
+    // Star rating functionality
+    const stars = document.querySelectorAll(".rating-star");
+    const ratingInput = document.querySelector('input[name="rating"]');
+
+    stars.forEach((star) => {
+      star.addEventListener("click", function () {
+        const value = this.getAttribute("for").replace("rating", "");
+        document.getElementById("rating" + value).checked = true;
+        updateStars(parseInt(value));
+      });
+
+      star.addEventListener("mouseover", function () {
+        const value = this.getAttribute("for").replace("rating", "");
+        highlightStars(parseInt(value));
+      });
+    });
+
+    const ratingContainer = document.getElementById("rating-container");
+    if (ratingContainer) {
+      ratingContainer.addEventListener("mouseout", function () {
+        resetStars();
+        const checkedInput = document.querySelector(
+          'input[name="rating"]:checked'
+        );
+        if (checkedInput) {
+          updateStars(parseInt(checkedInput.value));
+        }
+      });
+    }
+
+    function highlightStars(value) {
+      stars.forEach((star) => {
+        const starValue = parseInt(
+          star.getAttribute("for").replace("rating", "")
+        );
+        if (starValue <= value) {
+          star.classList.add("selected");
+        } else {
+          star.classList.remove("selected");
+        }
+      });
+    }
+
+    function resetStars() {
+      stars.forEach((star) => {
+        star.classList.remove("selected");
+      });
+    }
+
+    function updateStars(value) {
+      highlightStars(value);
+    }
+
+    // Initialize stars on page load
+    const checkedInput = document.querySelector('input[name="rating"]:checked');
+    if (checkedInput) {
+      updateStars(parseInt(checkedInput.value));
+    }
+  });
+</script>
+{% endblock %}

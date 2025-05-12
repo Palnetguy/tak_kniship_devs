@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %} 
+{% load admin_urls %} 
+{% load static %} 
+{% block extrastyle %} 
+{{ block.super }}
+
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="{% static 'admin/css/forms.css' %}"
+/>
+{% endblock %} {% block content %}
+
+<div id="content-main">
+  <form method="post">
+    {% csrf_token %}
+    <div>
+      <fieldset class="module aligned">
+        <h2>Send Feedback Request for "{{ project.title }}"</h2>
+
+        <div class="form-row">
+          <div class="fieldBox">
+            {{ form.recipient_email.errors }}
+            <label for="{{ form.recipient_email.id_for_label }}"
+              >{{ form.recipient_email.label }}:</label
+            >
+            {{ form.recipient_email }}
+            <div class="help">Enter the client's email address</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="fieldBox">
+            {{ form.recipient_name.errors }}
+            <label for="{{ form.recipient_name.id_for_label }}"
+              >{{ form.recipient_name.label }}:</label
+            >
+            {{ form.recipient_name }}
+            <div class="help">Enter the client's name</div>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="submit-row">
+        <input
+          type="submit"
+          value="Send Feedback Request"
+          class="default"
+          name="_send"
+        />
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

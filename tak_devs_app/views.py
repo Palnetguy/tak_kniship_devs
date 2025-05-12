@@ -1,10 +1,10 @@
 # views.py
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics
 
 from tak_web.settings import EMAIL_HOST_USER
-from .models import Agreement, ContactInfo, Project, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .models import Agreement, ContactInfo, Project, ProjectClient, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 from .serializers import AgreementSerializer, ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -13,6 +13,13 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from drf_yasg.utils import swagger_auto_schema
+from django.contrib import messages
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from .forms import TestimonialForm, ProjectClientFeedbackForm
+from django.conf import settings
 
 from django.http import HttpResponse
 
@@ -209,3 +216,86 @@ class WebApplicationListView(generics.ListAPIView):
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
         return WebApplication.objects.filter(project__id=project_id)
+    
+
+def testimonial_form(request, token=None):
+    form_submitted = False
+    
+    if request.method == 'POST':
+        form = TestimonialForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            form_submitted = True
+    else:
+        form = TestimonialForm()
+    
+    return render(request, 'testimonial_form.html', {
+        'form': form,
+        'form_submitted': form_submitted
+    })
+
+def client_feedback_form(request, project_id, token=None):
+    project = get_object_or_404(Project, pk=project_id)
+    form_submitted = False
+    
+    # Verify token
+    signer = TimestampSigner()
+    try:
+        value = signer.unsign(token, max_age=60*60*24*7)  # Valid for 7 days
+        if str(project_id) != value:
+            messages.error(request, "Invalid token. Please request a new feedback link.")
+            return redirect('home')
+    except (BadSignature, SignatureExpired):
+        messages.error(request, "This feedback link has expired or is invalid.")
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = ProjectClientFeedbackForm(request.POST, request.FILES)
+        if form.is_valid():
+            client = form.save(commit=False)
+            client.project = project
+            client.save()
+            form_submitted = True
+    else:
+        # Check if client feedback already exists
+        try:
+            client = ProjectClient.objects.get(project=project)
+            form = ProjectClientFeedbackForm(instance=client)
+            messages.info(request, "You've already submitted feedback for this project. You can update it below.")
+        except ProjectClient.DoesNotExist:
+            form = ProjectClientFeedbackForm()
+    
+    return render(request, 'client_feedback_form.html', {
+        'form': form,
+        'project': project,
+        'form_submitted': form_submitted
+    })
+
+def generate_client_feedback_link(project):
+    """Generate a secure link for client feedback"""
+    signer = TimestampSigner()
+    token = signer.sign(str(project.id))
+    return token
+
+def send_feedback_request_email(project, recipient_email, recipient_name):
+    """Send an email with the client feedback link"""
+    token = generate_client_feedback_link(project)
+    feedback_url = reverse('client_feedback_form', kwargs={'project_id': project.id, 'token': token})
+    absolute_url = settings.SITE_URL + feedback_url
+    
+    subject = f"We'd like your feedback on {project.title}"
+    html_message = render_to_string('email/feedback_request_email.html', {
+        'project': project,
+        'recipient_name': recipient_name,
+        'feedback_url': absolute_url
+    })
+    
+    send_mail(
+        subject,
+        f"Please share your feedback about {project.title} at: {absolute_url}",
+        settings.EMAIL_HOST_USER,
+        [recipient_email],
+        html_message=html_message,
+        fail_silently=False,
+    )
+    return True

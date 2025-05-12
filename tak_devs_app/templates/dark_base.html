@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}TAK Kinship Technologies{% endblock %}</title>
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/tak_dark_styles.css' %}" />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header class="header">
+      <div class="header-container">
+        <div class="logo">
+          <a href="https://www.takkinship.com">
+            <img
+              src="https://tak-kinship-bkt.s3.us-west-2.amazonaws.com/logo.png"
+              alt="TAK Kinship"
+            />
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>{% block content %}{% endblock %}</main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-logo">
+            <img
+              src="https://tak-kinship-bkt.s3.us-west-2.amazonaws.com/logo.png"
+              alt="TAK Kinship"
+            />
+            <p>Building innovative solutions for a digital future.</p>
+          </div>
+          <div class="footer-links">
+            <h5>Connect With Us</h5>
+            <div class="socials">
+              <a href="#" class="sos">
+                <i class="bi bi-linkedin"></i>
+              </a>
+              <a href="#" class="sos">
+                <i class="bi bi-twitter-x"></i>
+              </a>
+              <a href="#" class="sos">
+                <i class="bi bi-instagram"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="copyright">
+          <p>
+            &copy; {% now "Y" %} TAK Kinship Developers. All Rights Reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

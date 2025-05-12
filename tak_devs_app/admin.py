@@ -1,10 +1,19 @@
+from django import forms
 from django.contrib import admin
+from django.shortcuts import render, redirect
+from django.urls import path
+from django.contrib import messages
 from django.utils.html import format_html
 from .models import (
     FAQ, Agreement, ContactInfo, ContactUsMessage, DesktopApplication,
     Gallery, MobileApplication, Project, TeamMember, TechStack,
     Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient, ProjectImage
 )
+from .views import send_feedback_request_email
+
+class FeedbackRequestForm(forms.Form):
+    recipient_email = forms.EmailField(label="Recipient Email")
+    recipient_name = forms.CharField(label="Recipient Name", max_length=100)
 
 class ProjectImageInline(admin.TabularInline):
     model = ProjectImage
@@ -27,6 +36,66 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ('title', 'about_project')
     filter_horizontal = ('tech_stack',)
     inlines = [ProjectImageInline, ProjectFeatureInline, ProjectClientInline]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:project_id>/send-feedback-request/',
+                self.admin_site.admin_view(self.send_feedback_request_view),
+                name='send-feedback-request',
+            ),
+        ]
+        return custom_urls + urls
+    
+    def send_feedback_request_view(self, request, project_id):
+        project = self.get_queryset(request).get(pk=project_id)
+        
+        if request.method == 'POST':
+            form = FeedbackRequestForm(request.POST)
+            if form.is_valid():
+                recipient_email = form.cleaned_data['recipient_email']
+                recipient_name = form.cleaned_data['recipient_name']
+                
+                success = send_feedback_request_email(project, recipient_email, recipient_name)
+                
+                if success:
+                    self.message_user(
+                        request,
+                        f"Feedback request email sent to {recipient_email} successfully!",
+                        messages.SUCCESS,
+                    )
+                else:
+                    self.message_user(
+                        request,
+                        f"Failed to send feedback request email.",
+                        messages.ERROR,
+                    )
+                return redirect('.')
+        else:
+            form = FeedbackRequestForm()
+        
+        context = {
+            'title': f"Send Feedback Request for {project.title}",
+            'form': form,
+            'project': project,
+            'opts': self.model._meta,
+        }
+        return render(request, 'admin/send_feedback_request.html', context)
+    
+    def response_change(self, request, obj):
+        if "_send-feedback-request" in request.POST:
+            return redirect(
+                'admin:send-feedback-request',
+                project_id=obj.pk,
+            )
+        return super().response_change(request, obj)
+
+   
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["show_send_feedback_button"] = True
+        return super().change_view(request, object_id, form_url, extra_context)
 
 @admin.register(ProjectImage)
 class ProjectImageAdmin(admin.ModelAdmin):
