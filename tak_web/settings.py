@@ -231,6 +231,9 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
+# Email address to receive admin notifications
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+
 # Add this setting
 SITE_URL = 'https://takkinship-backend.up.railway.app'
 
