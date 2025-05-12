@@ -33,7 +33,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 
-ALLOWED_HOSTS = ['takkinship-backend.up.railway.app', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['takkinship-backend.up.railway.app','app.takkinship.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -86,7 +86,8 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = [
     'https://takkinship-backend.up.railway.app',
-    'http://takkinship-backend.up.railway.app'
+    'http://takkinship-backend.up.railway.app',
+    'https://app.takkinship.com'
     ]
 
 MIDDLEWARE = [
@@ -236,5 +237,5 @@ ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
 
 # Add this setting
-SITE_URL = 'https://takkinship-backend.up.railway.app'
+SITE_URL = 'https://app.takkinship.com'
 
