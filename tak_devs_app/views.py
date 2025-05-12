@@ -87,9 +87,12 @@ class TermsDetailAgreement(generics.RetrieveAPIView):
 
 
 class TeamMemberListView(generics.ListAPIView):
-    queryset = TeamMember.objects.all()
     serializer_class = TeamMemberSerializer
     permission_classes = [HasAPIKey]
+    
+    def get_queryset(self):
+        # Explicitly order by 'order' field and then by 'name'
+        return TeamMember.objects.all().order_by('order', 'name')
 
 class TestimonialListView(generics.ListAPIView):
     queryset = Testimonial.objects.all()

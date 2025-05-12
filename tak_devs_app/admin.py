@@ -63,9 +63,11 @@ class ProjectClientAdmin(admin.ModelAdmin):
 
 @admin.register(TeamMember)
 class TeamMemberAdmin(admin.ModelAdmin):
-    list_display = ('name', 'role', 'display_profile_picture', 'social_links')
+    list_display = ('order', 'name', 'role', 'display_profile_picture', 'social_links')
+    list_display_links = ('name',)  # Set name as the link field
     list_filter = ('role',)
     search_fields = ('name', 'role', 'biography')
+    list_editable = ('order',)  # Allow editing order directly from the list view
 
     def display_profile_picture(self, obj):
         return format_html('<img src="{}" width="50" height="50" />', obj.profile_picture.url)

@@ -95,14 +95,20 @@ class TeamMember(models.Model):
     profile_picture = models.ImageField(upload_to='team_images')
     name = models.CharField(max_length=100, db_index=True)
     role = models.CharField(max_length=50, db_index=True)
-    biography = models.TextField(blank=True)  # New field added
-    instagram = models.CharField(max_length=100)
+    biography = models.TextField(blank=True)
+    instagram = models.CharField(max_length=100, blank=True)
     linkedin = models.CharField(max_length=100)
-    twitter = models.CharField(max_length=100)
-  
+    twitter = models.CharField(max_length=100, blank=True)
+    order = models.PositiveIntegerField(default=0)  # New field for ordering
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        ordering = ['order', 'name']  # Order by the 'order' field, then by name
+        indexes = [
+            models.Index(fields=['order']),
+        ]
 
 class Testimonial(models.Model):
     user_photo = models.ImageField(upload_to='testimonial_images')
