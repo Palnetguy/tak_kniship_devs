@@ -1,9 +1,9 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
+import requests
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.mail import EmailMultiAlternatives, get_connection
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -17,15 +17,32 @@ email_executor = ThreadPoolExecutor(
 
 
 def _deliver_contact_notifications(messages, contact_message_id):
-    """Deliver a prepared batch outside the request-response cycle."""
+    """Deliver prepared contact emails through Resend's HTTPS API."""
     try:
-        delivered = get_connection(fail_silently=False).send_messages(messages)
+        if not settings.RESEND_API_KEY:
+            raise RuntimeError("RESEND_API_KEY is not configured")
+
+        delivered_ids = []
+        for message in messages:
+            response = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=message,
+                timeout=settings.EMAIL_TIMEOUT,
+            )
+            response.raise_for_status()
+            delivered_ids.append(response.json().get("id"))
+
         logger.info(
             "Contact notification delivery completed",
             extra={
                 'contact_message_id': contact_message_id,
                 'messages_requested': len(messages),
-                'messages_delivered': delivered,
+                'messages_delivered': len(delivered_ids),
+                'provider': 'resend',
             },
         )
     except Exception:
@@ -239,7 +256,7 @@ def create_agreements(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=ContactUsMessage)
 def notify_admin_contact_form(sender, instance, created, **kwargs):
-    """Send visitor and admin notifications over one SMTP connection."""
+    """Queue visitor and admin notifications through the Resend API."""
     if not created:
         return
 
@@ -252,28 +269,28 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
             'contact_us_message': instance,
             'admin_site_url': settings.ADMIN_SITE_URL,
         })
-        admin_message = EmailMultiAlternatives(
-            admin_subject,
-            strip_tags(admin_html),
-            settings.EMAIL_HOST_USER,
-            admin_emails,
-        )
-        admin_message.attach_alternative(admin_html, 'text/html')
-        messages.append(admin_message)
+        messages.append({
+            'from': settings.RESEND_FROM_EMAIL,
+            'to': admin_emails,
+            'subject': admin_subject,
+            'html': admin_html,
+            'text': strip_tags(admin_html),
+            'reply_to': instance.email,
+        })
 
     client_subject = "Thank you for contacting TAK Kinship Technologies"
     client_html = render_to_string('email/contact_us_notification_email.html', {
         'contact_us_message': instance,
         'portfolio_url': f"{settings.PUBLIC_SITE_URL}/portfolio",
     })
-    client_message = EmailMultiAlternatives(
-        client_subject,
-        strip_tags(client_html),
-        settings.EMAIL_HOST_USER,
-        [instance.email],
-    )
-    client_message.attach_alternative(client_html, 'text/html')
-    messages.append(client_message)
+    messages.append({
+        'from': settings.RESEND_FROM_EMAIL,
+        'to': [instance.email],
+        'subject': client_subject,
+        'html': client_html,
+        'text': strip_tags(client_html),
+        'reply_to': 'info@takkinship.com',
+    })
 
     email_executor.submit(_deliver_contact_notifications, messages, instance.pk)
     logger.info(
