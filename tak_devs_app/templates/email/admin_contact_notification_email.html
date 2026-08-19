@@ -8,10 +8,15 @@
   <style>
     @media only screen and (max-width: 620px) {
       .shell { width: 100% !important; }
+      .outer-pad { padding: 16px 8px !important; }
       .pad { padding-left: 22px !important; padding-right: 22px !important; }
       .detail-cell { display: block !important; width: 100% !important; }
       .detail-gap { height: 10px !important; }
       .button { display: block !important; text-align: center !important; }
+      .logo-cell { width: 48px !important; padding-left: 12px !important; }
+      .logo { width: 48px !important; height: 48px !important; }
+      .action-cell { display: block !important; width: 100% !important; text-align: left !important; padding-top: 16px !important; }
+      .email-wrap { overflow-wrap: anywhere !important; word-break: break-word !important; }
     }
   </style>
 </head>
@@ -19,7 +24,7 @@
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">New enquiry from {{ contact_us_message.name }} — {{ contact_us_message.subject }}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#111211;">
     <tr>
-      <td align="center" style="padding:32px 12px;">
+      <td class="outer-pad" align="center" style="padding:32px 12px;">
         <table role="presentation" class="shell" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:640px;background:#191919;border:1px solid #2e2e2e;border-radius:18px;overflow:hidden;">
           <tr>
             <td class="pad" style="padding:34px 40px 30px;background:#0a0b0a;border-bottom:1px solid #2e2e2e;">
@@ -30,8 +35,8 @@
                     <h1 style="margin:12px 0 8px;font-size:30px;line-height:1.15;color:#ffffff;">A new conversation<br>just started.</h1>
                     <p style="margin:0;color:#9e9e9e;font-size:15px;line-height:1.6;">A visitor sent a message through the portfolio contact form.</p>
                   </td>
-                  <td width="56" valign="top" align="right">
-                    <img src="https://www.takkinship.com/icon.png" width="56" height="56" alt="TAK Kinship" style="display:block;width:56px;height:56px;border:0;border-radius:12px;outline:none;text-decoration:none;">
+                  <td class="logo-cell" width="56" valign="top" align="right">
+                    <img class="logo" src="https://www.takkinship.com/icon.png" width="56" height="56" alt="TAK Kinship" style="display:block;width:56px;height:56px;border:0;border-radius:12px;outline:none;text-decoration:none;">
                   </td>
                 </tr>
               </table>
@@ -44,7 +49,7 @@
                   <td class="detail-cell" width="49%" valign="top" style="padding:17px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
                     <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">From</div>
                     <div style="margin-top:7px;font-size:18px;font-weight:700;color:#ffffff;">{{ contact_us_message.name }}</div>
-                    <a href="mailto:{{ contact_us_message.email }}" style="display:inline-block;margin-top:6px;color:#9e9e9e;font-size:14px;text-decoration:none;">{{ contact_us_message.email }}</a>
+                    <a class="email-wrap" href="mailto:{{ contact_us_message.email }}" style="display:inline-block;margin-top:6px;color:#9e9e9e;font-size:14px;text-decoration:none;overflow-wrap:anywhere;word-break:break-word;">{{ contact_us_message.email }}</a>
                   </td>
                   <td class="detail-gap" width="2%">&nbsp;</td>
                   <td class="detail-cell" width="49%" valign="top" style="padding:17px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
@@ -70,7 +75,7 @@
                   <td>
                     <a class="button" href="mailto:{{ contact_us_message.email }}?subject=Re:%20{{ contact_us_message.subject|urlencode }}" style="display:inline-block;padding:13px 22px;background:#4a9252;color:#111111;text-decoration:none;border-radius:9px;font-size:14px;font-weight:700;">Reply to {{ contact_us_message.name }}</a>
                   </td>
-                  <td align="right">
+                  <td class="action-cell" align="right">
                     <a href="{{ admin_site_url }}{% url 'admin:tak_devs_app_contactusmessage_change' contact_us_message.id %}" style="color:#9e9e9e;font-size:13px;text-decoration:underline;">Open record</a>
                   </td>
                 </tr>
