@@ -1,181 +1,70 @@
-{% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thank You for Contacting Us | TAK Kinship</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>We received your message | TAK Kinship</title>
   <style>
-    /* Email clients don't support CSS variables, so using direct colors */
-    body {
-      font-family: 'Outfit', Arial, sans-serif;
-      line-height: 1.6;
-      color: #5e5e5e;
-      background-color: #f5f5f5 !important;
-      margin: 0;
-      padding: 0;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    .email-container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff !important;
-    }
-    
-    .header {
-      background-color: #1fa84f !important;
-      padding: 30px 0;
-      text-align: center;
-    }
-    
-    .header img {
-      height: 60px;
-    }
-    
-    .content {
-      padding: 40px 30px;
-      background-color: #ffffff !important;
-    }
-    
-    .greeting {
-      font-size: 22px;
-      font-weight: 600;
-      color: #202020;
-      margin-bottom: 20px;
-    }
-    
-    .message {
-      margin-bottom: 25px;
-      color: #555;
-      font-size: 16px;
-    }
-    
-    .message-box {
-      background-color: #f8f9fa !important;
-      border-left: 4px solid #1fa84f;
-      padding: 15px 20px;
-      margin: 20px 0;
-      border-radius: 0 4px 4px 0;
-    }
-    
-    .message-box p {
-      font-style: italic;
-      color: #666;
-    }
-    
-    .cta-button {
-      display: inline-block;
-      background-color: #1fa84f !important;
-      color: #ffffff !important;
-      padding: 12px 25px;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: 600;
-      margin: 20px 0;
-    }
-    
-    .signature {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-    }
-    
-    .signature p {
-      margin: 5px 0;
-    }
-    
-    .signature strong {
-      color: #202020;
-    }
-    
-    .footer {
-      background-color: #f8f9fa !important;
-      padding: 20px;
-      text-align: center;
-      font-size: 14px;
-      color: #777;
-      border-top: 1px solid #eee;
-    }
-    
-    .social-links {
-      margin: 15px 0;
-    }
-    
-    .social-links a {
-      display: inline-block;
-      margin: 0 8px;
-    }
-    
-    .social-links img {
-      width: 25px;
-      height: 25px;
-    }
-    
-    @media only screen and (max-width: 600px) {
-      .content {
-        padding: 30px 20px;
-      }
-      
-      .greeting {
-        font-size: 20px;
-      }
+    @media only screen and (max-width: 620px) {
+      .shell { width:100% !important; }
+      .pad { padding-left:22px !important; padding-right:22px !important; }
+      .button { display:block !important; text-align:center !important; }
     }
   </style>
 </head>
-<body style="background-color: #f5f5f5; margin: 0; padding: 0;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f5f5f5;">
+<body style="margin:0;padding:0;background:#111211;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Thanks, {{ contact_us_message.name }}. Your message is safely with the TAK Kinship team.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#111211;">
     <tr>
-      <td align="center">
-        <div class="email-container" style="background-color: #ffffff;">
-          <div class="header" style="background-color: #1fa84f; padding: 30px 0; text-align: center;">
-            <img src="https://tak-kinship-bkt.s3.us-west-2.amazonaws.com/logo.png" alt="TAK Kinship Technologies" style="height: 60px;" />
-          </div>
-          
-          <div class="content" style="padding: 40px 30px; background-color: #ffffff;">
-            <h1 class="greeting" style="font-size: 22px; font-weight: 600; color: #202020; margin-bottom: 20px;">Hello, {{ contact_us_message.name }}!</h1>
-            
-            <div class="message" style="margin-bottom: 25px; color: #555; font-size: 16px;">
-              <p>Thank you for reaching out to TAK Kinship Technologies. We've received your message and appreciate your interest in our services.</p>
-            </div>
-            
-            <div class="message-box" style="background-color: #f8f9fa; border-left: 4px solid #1fa84f; padding: 15px 20px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-              <p style="font-style: italic; color: #666;"><strong>Your message:</strong></p>
-              <p style="font-style: italic; color: #666;">"{{ contact_us_message.message }}"</p>
-            </div>
-            
-            <div class="message" style="margin-bottom: 25px; color: #555; font-size: 16px;">
-              <p>Our team is currently reviewing your inquiry and we'll get back to you as soon as possible, typically within 24-48 business hours.</p>
-              <p>In the meantime, feel free to explore our <a href="https://www.takkinship.com/portfolio" style="color: #1fa84f;">portfolio</a> to see some of our recent projects.</p>
-            </div>
-            
-            <a href="https://www.takkinship.com" class="cta-button" style="display: inline-block; background-color: #1fa84f; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0;">Visit Our Website</a>
-            
-            <div class="signature" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-              <p style="margin: 5px 0;"><strong style="color: #202020;">Tusingwire Martin</strong></p>
-              <p style="margin: 5px 0;">Founder & CEO</p>
-              <p style="margin: 5px 0;">TAK Kinship Technologies</p>
-            </div>
-          </div>
-          
-          <div class="footer" style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #777; border-top: 1px solid #eee;">
-            <p>If you have any urgent questions, please contact us directly at:</p>
-            <p><a href="mailto:developers@takkinship.com" style="color: #1fa84f;">developers@takkinship.com</a></p>
-            
-            <div class="social-links" style="margin: 15px 0;">
-              <a href="https://twitter.com/takkinship" style="display: inline-block; margin: 0 8px;"><img src="https://res.cloudinary.com/palnet/image/upload/v1710037038/TAK%20Kniship/website%20images/srbab8elylqsvjoixtra.png" alt="Twitter" style="width: 25px; height: 25px;" /></a>
-              <a href="https://linkedin.com/company/takkinship" style="display: inline-block; margin: 0 8px;"><img src="https://res.cloudinary.com/palnet/image/upload/v1710037039/TAK%20Kniship/website%20images/str0rjzm9r9lirtdcoij.png" alt="LinkedIn" style="width: 25px; height: 25px;" /></a>
-              <a href="https://instagram.com/takkinship" style="display: inline-block; margin: 0 8px;"><img src="https://res.cloudinary.com/palnet/image/upload/v1710037039/TAK%20Kniship/website%20images/wrgwyjfvfvrs9dvn8hw7.png" alt="Instagram" style="width: 25px; height: 25px;" /></a>
-            </div>
-            
-            <p>&copy; {% now "Y" %} TAK Kinship Technologies. All Rights Reserved.</p>
-          </div>
-        </div>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="shell" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:640px;background:#191919;border:1px solid #2e2e2e;border-radius:18px;overflow:hidden;">
+          <tr>
+            <td class="pad" style="padding:34px 40px 30px;background:#0a0b0a;border-bottom:1px solid #2e2e2e;">
+              <div style="font-size:13px;font-weight:700;letter-spacing:2px;color:#5fa968;">TAK KINSHIP</div>
+              <h1 style="margin:16px 0 10px;font-size:34px;line-height:1.12;color:#ffffff;">Your idea is<br><span style="color:#5fa968;">in good hands.</span></h1>
+              <p style="margin:0;color:#9e9e9e;font-size:15px;line-height:1.65;">Hello {{ contact_us_message.name }}, we received your message and the team will review it shortly.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="pad" style="padding:30px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="40" valign="top">
+                    <div style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;background:#4a9252;color:#111111;font-size:16px;font-weight:700;">✓</div>
+                  </td>
+                  <td>
+                    <div style="color:#ffffff;font-size:16px;font-weight:700;">Message received</div>
+                    <div style="margin-top:4px;color:#9e9e9e;font-size:14px;line-height:1.6;">Expect a thoughtful response within 1–2 business days.</div>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top:24px;padding:22px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
+                <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">A copy of your message</div>
+                <p style="margin:12px 0 0;color:#d8d8d8;font-size:15px;line-height:1.7;white-space:pre-wrap;">{{ contact_us_message.message }}</p>
+              </div>
+
+              <p style="margin:24px 0;color:#9e9e9e;font-size:14px;line-height:1.7;">While you wait, explore how we turn complex problems into dependable digital products.</p>
+              <a class="button" href="https://app.takkinship.com/portfolio" style="display:inline-block;padding:13px 22px;background:#4a9252;color:#111111;text-decoration:none;border-radius:9px;font-size:14px;font-weight:700;">Explore our work&nbsp; →</a>
+
+              <div style="margin-top:30px;padding-top:22px;border-top:1px solid #2e2e2e;">
+                <div style="color:#ffffff;font-size:14px;font-weight:700;">The TAK Kinship team</div>
+                <div style="margin-top:5px;color:#737373;font-size:13px;">Software engineered with purpose · Mbarara, Uganda</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="pad" style="padding:20px 40px;background:#0f0f10;border-top:1px solid #2e2e2e;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="color:#737373;font-size:12px;line-height:1.6;">© {% now "Y" %} TAK Kinship Technologies</td>
+                  <td align="right"><a href="mailto:info@takkinship.com" style="color:#5fa968;font-size:12px;text-decoration:none;">info@takkinship.com</a></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
