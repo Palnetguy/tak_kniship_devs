@@ -262,3 +262,18 @@ ADMIN_EMAILS = [
 # Add this setting
 SITE_URL = 'https://app.takkinship.com'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'tak_devs_app': {
+            'handlers': ['console'],
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+    },
+}
+

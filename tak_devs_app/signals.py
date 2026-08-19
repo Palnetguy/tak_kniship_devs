@@ -1,10 +1,14 @@
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from .models import ContactUsMessage, Project, Agreement, Testimonial, ProjectClient
+
+logger = logging.getLogger(__name__)
 
 # Define default policy text as constants
 POLICY_DEFAULT_TEXT = """1. Information We Collect
@@ -211,47 +215,54 @@ def create_agreements(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=ContactUsMessage)
 def notify_admin_contact_form(sender, instance, created, **kwargs):
-    """Send notification to admins when a new contact form is submitted"""
-    if created:
-        subject = f"New Contact Form: {instance.subject}"
-        
-        html_message = render_to_string('email/admin_contact_notification_email.html', {
+    """Send visitor and admin notifications over one SMTP connection."""
+    if not created:
+        return
+
+    messages = []
+    admin_emails = getattr(settings, 'ADMIN_EMAILS', [])
+
+    if admin_emails:
+        admin_subject = f"New Contact Form: {instance.subject}"
+        admin_html = render_to_string('email/admin_contact_notification_email.html', {
             'contact_us_message': instance,
             'site_url': settings.SITE_URL,
         })
-        
-        plain_message = strip_tags(html_message)
-        
-        # Get admin emails from settings
-        admin_emails = getattr(settings, 'ADMIN_EMAILS', [])
-        
-        # Ensure we have recipients
-        if admin_emails:
-            send_mail(
-                subject,
-                plain_message,
-                settings.EMAIL_HOST_USER,
-                admin_emails,
-                html_message=html_message,
-                fail_silently=True,
-            )
+        admin_message = EmailMultiAlternatives(
+            admin_subject,
+            strip_tags(admin_html),
+            settings.EMAIL_HOST_USER,
+            admin_emails,
+        )
+        admin_message.attach_alternative(admin_html, 'text/html')
+        messages.append(admin_message)
 
-        # Also send a confirmation email to the person who submitted the form
-        client_subject = "Thank you for contacting TAK Kinship Technologies"
-        client_html_message = render_to_string('email/contact_us_notification_email.html', {
-            'contact_us_message': instance
-        })
-        client_plain_message = strip_tags(client_html_message)
-        
-        try:
-            send_mail(
-                client_subject,
-                client_plain_message,
-                settings.EMAIL_HOST_USER,
-                [instance.email],
-                html_message=client_html_message,
-                fail_silently=False,
-            )
-        except Exception as e:
-            print(f"Error sending confirmation email: {str(e)}")
+    client_subject = "Thank you for contacting TAK Kinship Technologies"
+    client_html = render_to_string('email/contact_us_notification_email.html', {
+        'contact_us_message': instance
+    })
+    client_message = EmailMultiAlternatives(
+        client_subject,
+        strip_tags(client_html),
+        settings.EMAIL_HOST_USER,
+        [instance.email],
+    )
+    client_message.attach_alternative(client_html, 'text/html')
+    messages.append(client_message)
+
+    try:
+        delivered = get_connection(fail_silently=False).send_messages(messages)
+        logger.info(
+            "Contact notification delivery completed",
+            extra={
+                'contact_message_id': instance.pk,
+                'messages_requested': len(messages),
+                'messages_delivered': delivered,
+            },
+        )
+    except Exception:
+        logger.exception(
+            "Contact notification delivery failed",
+            extra={'contact_message_id': instance.pk},
+        )
 
