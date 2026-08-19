@@ -263,7 +263,8 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
 
     client_subject = "Thank you for contacting TAK Kinship Technologies"
     client_html = render_to_string('email/contact_us_notification_email.html', {
-        'contact_us_message': instance
+        'contact_us_message': instance,
+        'portfolio_url': f"{settings.PUBLIC_SITE_URL}/portfolio",
     })
     client_message = EmailMultiAlternatives(
         client_subject,
