@@ -256,7 +256,7 @@ EMAIL_TIMEOUT = 10
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
 RESEND_FROM_EMAIL = os.getenv(
     "RESEND_FROM_EMAIL",
-    "TAK Kinship <contact@contact.takkinship.com>",
+    "TAK Kinship <noreply@contact.takkinship.com>",
 ).strip()
 
 # Comma-separated recipients for contact notifications. Keep ADMIN_EMAIL as a
