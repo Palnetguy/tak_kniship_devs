@@ -250,8 +250,13 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_TIMEOUT = 10
 
-# Email address to receive admin notifications
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+# Comma-separated recipients for contact notifications. Keep ADMIN_EMAIL as a
+# backwards-compatible fallback for the existing Railway configuration.
+ADMIN_EMAILS = [
+    email.strip()
+    for email in os.getenv("ADMIN_EMAILS", os.getenv("ADMIN_EMAIL", "")).split(",")
+    if email.strip()
+]
 
 
 # Add this setting
