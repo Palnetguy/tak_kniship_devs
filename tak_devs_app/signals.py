@@ -269,14 +269,15 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
             'contact_us_message': instance,
             'admin_site_url': settings.ADMIN_SITE_URL,
         })
-        messages.append({
-            'from': settings.RESEND_FROM_EMAIL,
-            'to': admin_emails,
-            'subject': admin_subject,
-            'html': admin_html,
-            'text': strip_tags(admin_html),
-            'reply_to': instance.email,
-        })
+        for admin_email in admin_emails:
+            messages.append({
+                'from': settings.RESEND_FROM_EMAIL,
+                'to': [admin_email],
+                'subject': admin_subject,
+                'html': admin_html,
+                'text': strip_tags(admin_html),
+                'reply_to': instance.email,
+            })
 
     client_subject = "Thank you for contacting TAK Kinship Technologies"
     client_html = render_to_string('email/contact_us_notification_email.html', {
