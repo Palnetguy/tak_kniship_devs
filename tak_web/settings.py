@@ -33,7 +33,24 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 
-ALLOWED_HOSTS = ['takkinship-backend.up.railway.app','app.takkinship.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [
+    'takkinship-backend.up.railway.app',
+    'app.takkinship.com',
+    '127.0.0.1',
+    'localhost',
+]
+
+# Railway terminates TLS before forwarding requests to Gunicorn. Trust only
+# its standard forwarded-protocol header, then enforce HTTPS in production.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+X_FRAME_OPTIONS = 'DENY'
 
 
 # Application definition
@@ -59,9 +76,9 @@ INSTALLED_APPS = [
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
-        'X-API-Key': {
+        'Api-Key': {
             'type': 'apiKey',
-            'name': 'X-API-Key',
+            'name': 'Authorization',
             'in': 'header'
         }
     },
@@ -86,7 +103,6 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = [
     'https://takkinship-backend.up.railway.app',
-    'http://takkinship-backend.up.railway.app',
     'https://app.takkinship.com'
     ]
 
@@ -139,7 +155,11 @@ DATABASES = {
                 'USER': config('PGUSER'),
                 'PASSWORD': config('PGPASSWORD'),
                 'HOST': config('PGHOST'),
-                'PORT': config('PGPORT')
+                'PORT': config('PGPORT'),
+                # Reuse database connections across Gunicorn requests instead
+                # of paying a PostgreSQL handshake on every API call.
+                'CONN_MAX_AGE': 60,
+                'CONN_HEALTH_CHECKS': True,
             }
     }
 
@@ -181,9 +201,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
@@ -231,6 +248,7 @@ EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_TIMEOUT = 10
 
 # Email address to receive admin notifications
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")

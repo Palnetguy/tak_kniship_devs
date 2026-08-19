@@ -1,14 +1,17 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
-import secrets
-
-User = get_user_model()
+from rest_framework_api_key.models import APIKey
 
 class Command(BaseCommand):
-    help = 'Generate API keys for users'
+    help = 'Generate a DRF API key and display its value once'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--name',
+            default='tak-portfolio-production',
+            help='A descriptive name shown in Django admin',
+        )
 
     def handle(self, *args, **options):
-        for user in User.objects.all():
-            if not user.api_key:
-                user.api_key = secrets.token_hex(20)
-                user.save()
+        _, key = APIKey.objects.create_key(name=options['name'])
+        self.stdout.write(self.style.SUCCESS('API key created. Copy it now; it will not be shown again:'))
+        self.stdout.write(key)
