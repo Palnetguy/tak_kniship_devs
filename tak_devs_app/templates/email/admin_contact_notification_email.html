@@ -1,177 +1,90 @@
-{% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>New Contact Form Submission | TAK Kinship</title>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>New website enquiry | TAK Kinship</title>
+  <style>
+    @media only screen and (max-width: 620px) {
+      .shell { width: 100% !important; }
+      .pad { padding-left: 22px !important; padding-right: 22px !important; }
+      .detail-cell { display: block !important; width: 100% !important; }
+      .detail-gap { height: 10px !important; }
+      .button { display: block !important; text-align: center !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#111211;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">New enquiry from {{ contact_us_message.name }} — {{ contact_us_message.subject }}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#111211;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="shell" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:640px;background:#191919;border:1px solid #2e2e2e;border-radius:18px;overflow:hidden;">
+          <tr>
+            <td class="pad" style="padding:34px 40px 30px;background:#0a0b0a;border-bottom:1px solid #2e2e2e;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="font-size:13px;font-weight:700;letter-spacing:2px;color:#5fa968;">TAK KINSHIP</div>
+                    <h1 style="margin:12px 0 8px;font-size:30px;line-height:1.15;color:#ffffff;">A new conversation<br>just started.</h1>
+                    <p style="margin:0;color:#9e9e9e;font-size:15px;line-height:1.6;">A visitor sent a message through the portfolio contact form.</p>
+                  </td>
+                  <td width="56" valign="top" align="right">
+                    <div style="width:46px;height:46px;line-height:46px;text-align:center;border-radius:50%;background:#4a9252;color:#111111;font-size:22px;font-weight:700;">↗</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="pad" style="padding:30px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="detail-cell" width="49%" valign="top" style="padding:17px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
+                    <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">From</div>
+                    <div style="margin-top:7px;font-size:18px;font-weight:700;color:#ffffff;">{{ contact_us_message.name }}</div>
+                    <a href="mailto:{{ contact_us_message.email }}" style="display:inline-block;margin-top:6px;color:#9e9e9e;font-size:14px;text-decoration:none;">{{ contact_us_message.email }}</a>
+                  </td>
+                  <td class="detail-gap" width="2%">&nbsp;</td>
+                  <td class="detail-cell" width="49%" valign="top" style="padding:17px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
+                    <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">Received</div>
+                    <div style="margin-top:7px;font-size:16px;font-weight:700;color:#ffffff;">{{ contact_us_message.date_sent|date:"M j, Y" }}</div>
+                    <div style="margin-top:6px;color:#9e9e9e;font-size:14px;">{{ contact_us_message.date_sent|time:"H:i T" }}</div>
+                  </td>
+                </tr>
+              </table>
 
-      :root {
-        --brand-color: #1fa84f;
-        --dark-color: #202020;
-        --light-color: #f8f6f4;
-        --secondary-color: #5e5e5e;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Outfit", sans-serif;
-        line-height: 1.6;
-        color: var(--secondary-color);
-        background-color: #f5f5f5;
-      }
-
-      .email-container {
-        max-width: 600px;
-        margin: 0 auto;
-        background-color: #ffffff;
-      }
-
-      .header {
-        background-color: var(--brand-color);
-        padding: 20px;
-        text-align: center;
-      }
-
-      .header h1 {
-        color: #ffffff;
-        font-size: 24px;
-        margin: 0;
-      }
-
-      .content {
-        padding: 30px 25px;
-        background-color: #ffffff;
-      }
-
-      .alert {
-        background-color: #f8f9fa;
-        border-left: 4px solid var(--brand-color);
-        padding: 15px;
-        margin-bottom: 20px;
-      }
-
-      .contact-details {
-        margin-bottom: 25px;
-      }
-
-      .contact-details h3 {
-        color: var(--dark-color);
-        margin-bottom: 15px;
-        font-size: 18px;
-      }
-
-      .contact-field {
-        margin-bottom: 10px;
-      }
-
-      .contact-field strong {
-        color: var(--dark-color);
-        display: inline-block;
-        width: 100px;
-        font-weight: 600;
-      }
-
-      .message-content {
-        margin-top: 20px;
-      }
-
-      .message-content h3 {
-        color: var(--dark-color);
-        margin-bottom: 10px;
-        font-size: 18px;
-      }
-
-      .message-box {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 4px;
-        border: 1px solid #eee;
-      }
-
-      .action-button {
-        display: inline-block;
-        background-color: var(--brand-color);
-        color: #ffffff !important;
-        padding: 12px 25px;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: 600;
-        margin: 20px 0;
-      }
-
-      .footer {
-        background-color: #f8f9fa;
-        padding: 15px;
-        text-align: center;
-        font-size: 14px;
-        color: #777;
-        border-top: 1px solid #eee;
-      }
-    </style>
-  </head>
-  <body style="background-color: #f5f5f5; margin: 0; padding: 0;">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f5f5f5;">
-      <tr>
-        <td align="center">
-          <div class="email-container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-            <div class="header" style="background-color: #1fa84f; padding: 20px; text-align: center;">
-              <h1 style="color: #ffffff; font-size: 24px; margin: 0;">New Contact Form Submission</h1>
-            </div>
-            
-            <div class="content" style="padding: 30px 25px; background-color: #ffffff;">
-              <div class="alert" style="background-color: #f8f9fa; border-left: 4px solid #1fa84f; padding: 15px; margin-bottom: 20px;">
-                <p>You have received a new message from the contact form on your website.</p>
+              <div style="margin-top:22px;padding:18px 20px;background:#0f0f10;border:1px solid #2e2e2e;border-radius:12px;">
+                <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">Subject</div>
+                <div style="margin-top:8px;font-size:16px;color:#ffffff;font-weight:700;">{{ contact_us_message.subject }}</div>
               </div>
-              
-              <div class="contact-details" style="margin-bottom: 25px;">
-                <h3 style="color: #202020; margin-bottom: 15px; font-size: 18px;">Contact Information</h3>
-                
-                <div class="contact-field" style="margin-bottom: 10px;">
-                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Name:</strong> {{ contact_us_message.name }}
-                </div>
-                
-                <div class="contact-field" style="margin-bottom: 10px;">
-                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Email:</strong> <a href="mailto:{{ contact_us_message.email }}" style="color: #1fa84f;">{{ contact_us_message.email }}</a>
-                </div>
-                
-                <div class="contact-field" style="margin-bottom: 10px;">
-                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Phone:</strong> {{ contact_us_message.phone_number|default:"Not provided" }}
-                </div>
-                
-                <div class="contact-field" style="margin-bottom: 10px;">
-                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Subject:</strong> {{ contact_us_message.subject }}
-                </div>
-                
-                <div class="contact-field" style="margin-bottom: 10px;">
-                  <strong style="color: #202020; display: inline-block; width: 100px; font-weight: 600;">Time:</strong> {{ contact_us_message.created_at|date:"F j, Y, g:i a" }}
-                </div>
+
+              <div style="margin-top:14px;padding:22px;background:#0a0b0a;border-left:3px solid #5fa968;border-radius:4px 12px 12px 4px;">
+                <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#5fa968;font-weight:700;">Message</div>
+                <p style="margin:12px 0 0;color:#e8e8e8;font-size:16px;line-height:1.7;white-space:pre-wrap;">{{ contact_us_message.message }}</p>
               </div>
-              
-              <div class="message-content" style="margin-top: 20px;">
-                <h3 style="color: #202020; margin-bottom: 10px; font-size: 18px;">Message</h3>
-                <div class="message-box" style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
-                  <p>{{ contact_us_message.message }}</p>
-                </div>
-              </div>
-              
-              <a href="{{ site_url }}{% url 'admin:tak_devs_app_contactusmessage_change' contact_us_message.id %}" class="action-button" style="display: inline-block; background-color: #1fa84f; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0;">View in Admin</a>
-            </div>
-            
-            <div class="footer" style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 14px; color: #777; border-top: 1px solid #eee;">
-              <p>This is an automated message from your website's contact form.</p>
-              <p>&copy; {% now "Y" %} TAK Kinship Technologies</p>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </table>
-  </body>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+                <tr>
+                  <td>
+                    <a class="button" href="mailto:{{ contact_us_message.email }}?subject=Re:%20{{ contact_us_message.subject|urlencode }}" style="display:inline-block;padding:13px 22px;background:#4a9252;color:#111111;text-decoration:none;border-radius:9px;font-size:14px;font-weight:700;">Reply to {{ contact_us_message.name }}</a>
+                  </td>
+                  <td align="right">
+                    <a href="{{ admin_site_url }}{% url 'admin:tak_devs_app_contactusmessage_change' contact_us_message.id %}" style="color:#9e9e9e;font-size:13px;text-decoration:underline;">Open record</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="pad" style="padding:20px 40px;background:#0f0f10;border-top:1px solid #2e2e2e;color:#737373;font-size:12px;line-height:1.6;">
+              Automated notification from app.takkinship.com · Contact #{{ contact_us_message.id }}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>

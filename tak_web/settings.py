@@ -261,6 +261,10 @@ ADMIN_EMAILS = [
 
 # Add this setting
 SITE_URL = 'https://app.takkinship.com'
+ADMIN_SITE_URL = os.getenv(
+    'ADMIN_SITE_URL',
+    'https://takkinship-backend.up.railway.app',
+).rstrip('/')
 
 LOGGING = {
     'version': 1,

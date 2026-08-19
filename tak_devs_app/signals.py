@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -9,6 +10,29 @@ from django.utils.html import strip_tags
 from .models import ContactUsMessage, Project, Agreement, Testimonial, ProjectClient
 
 logger = logging.getLogger(__name__)
+email_executor = ThreadPoolExecutor(
+    max_workers=2,
+    thread_name_prefix='contact-email',
+)
+
+
+def _deliver_contact_notifications(messages, contact_message_id):
+    """Deliver a prepared batch outside the request-response cycle."""
+    try:
+        delivered = get_connection(fail_silently=False).send_messages(messages)
+        logger.info(
+            "Contact notification delivery completed",
+            extra={
+                'contact_message_id': contact_message_id,
+                'messages_requested': len(messages),
+                'messages_delivered': delivered,
+            },
+        )
+    except Exception:
+        logger.exception(
+            "Contact notification delivery failed",
+            extra={'contact_message_id': contact_message_id},
+        )
 
 # Define default policy text as constants
 POLICY_DEFAULT_TEXT = """1. Information We Collect
@@ -226,7 +250,7 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
         admin_subject = f"New Contact Form: {instance.subject}"
         admin_html = render_to_string('email/admin_contact_notification_email.html', {
             'contact_us_message': instance,
-            'site_url': settings.SITE_URL,
+            'admin_site_url': settings.ADMIN_SITE_URL,
         })
         admin_message = EmailMultiAlternatives(
             admin_subject,
@@ -250,19 +274,12 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
     client_message.attach_alternative(client_html, 'text/html')
     messages.append(client_message)
 
-    try:
-        delivered = get_connection(fail_silently=False).send_messages(messages)
-        logger.info(
-            "Contact notification delivery completed",
-            extra={
-                'contact_message_id': instance.pk,
-                'messages_requested': len(messages),
-                'messages_delivered': delivered,
-            },
-        )
-    except Exception:
-        logger.exception(
-            "Contact notification delivery failed",
-            extra={'contact_message_id': instance.pk},
-        )
+    email_executor.submit(_deliver_contact_notifications, messages, instance.pk)
+    logger.info(
+        "Contact notification delivery queued",
+        extra={
+            'contact_message_id': instance.pk,
+            'messages_requested': len(messages),
+        },
+    )
 
