@@ -123,69 +123,6 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
     serializer_class = ContactUsMessageSerializer
     permission_classes = [HasAPIKey]
 
-    def perform_create(self, serializer):
-        # Extract data from the request
-        name = self.request.data.get('name')
-        subject = self.request.data.get('subject')
-        email = self.request.data.get('email')
-        message = self.request.data.get('message')
-        phone_number = self.request.data.get('phone_number')
-
-        print(name)
-        print(subject)
-        print(message)
-        print(email)
-
-        # Create a ContactUsMessage instance
-        contact_us_message = ContactUsMessage(
-            name=name,
-            subject=subject,
-            email=email,
-            message=message,
-            phone_number=phone_number
-        )
-
-        # Save the ContactUsMessage
-        contact_us_message.save()
-
-        # Send Client and Admins email notification
-        send_contact_us_notification(contact_us_message)
-        send_admin_message_notification(contact_us_message)
-
-def send_contact_us_notification(contact_us_message):
-    """Send a nicely formatted email to the person who submitted the contact form"""
-    subject = "Thank you for contacting TAK Kinship Technologies"
-    html_message = render_to_string('email/contact_us_notification_email.html', {
-        'contact_us_message': contact_us_message
-    })
-    plain_message = strip_tags(html_message)
-    
-    send_mail(
-        subject,
-        plain_message,
-        settings.EMAIL_HOST_USER,  # Sender's email address
-        [contact_us_message.email],  # Recipient's email address
-        html_message=html_message,
-        fail_silently=False,
-    )
-
-def send_admin_message_notification(contact_us_message):
-    """Send a well-structured notification to admins when a new contact form is submitted"""
-    subject = f"New Contact Form: {contact_us_message.subject}"
-    html_message = render_to_string('email/admin_contact_notification_email.html', {
-        'contact_us_message': contact_us_message
-    })
-    plain_message = strip_tags(html_message)
-    
-    send_mail(
-        subject,
-        plain_message,
-        settings.EMAIL_HOST_USER,  # Sender's email address
-        ['tusingwiremartinrhinetreviz@gmail.com', 'sktechug@gmail.com'],  # Admin email addresses
-        html_message=html_message,
-        fail_silently=False,
-    )
-
 class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()
     serializer_class = WorkExperienceSerializer
