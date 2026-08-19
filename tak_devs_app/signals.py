@@ -231,9 +231,9 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
                 subject,
                 plain_message,
                 settings.EMAIL_HOST_USER,
-                ['tusingwiremartinrhinetreviz@gmail.com', 'sktechug@gmail.com'],  # Now this is a properly formatted list of emails
+                admin_emails,
                 html_message=html_message,
-                fail_silently=True,  # Set to True to prevent exceptions breaking the flow
+                fail_silently=True,
             )
 
         # Also send a confirmation email to the person who submitted the form
