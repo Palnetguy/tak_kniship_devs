@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
 import os
 from dotenv import load_dotenv
 
@@ -148,19 +147,30 @@ WSGI_APPLICATION = 'tak_web.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 
-DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('PGDATABASE'),
-                'USER': config('PGUSER'),
-                'PASSWORD': config('PGPASSWORD'),
-                'HOST': config('PGHOST'),
-                'PORT': config('PGPORT'),
-                # Reuse database connections across Gunicorn requests instead
-                # of paying a PostgreSQL handshake on every API call.
-                'CONN_MAX_AGE': 60,
-                'CONN_HEALTH_CHECKS': True,
-            }
+USE_SQLITE = os.getenv('DJANGO_USE_SQLITE', 'False').lower() == 'true'
+
+if USE_SQLITE:
+    # Explicit local-only mode. Production continues to require PostgreSQL.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('PGDATABASE'),
+            'USER': os.getenv('PGUSER'),
+            'PASSWORD': os.getenv('PGPASSWORD'),
+            'HOST': os.getenv('PGHOST'),
+            'PORT': os.getenv('PGPORT'),
+            # Reuse database connections across Gunicorn requests instead
+            # of paying a PostgreSQL handshake on every API call.
+            'CONN_MAX_AGE': 60,
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
 
 # AUTH_USER_MODEL = 'tak_devs_app.User'
