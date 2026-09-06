@@ -39,7 +39,15 @@ class ProjectListView(generics.ListAPIView):
     """
     Lists all projects with their features, tech stack, and client information.
     """
-    queryset = Project.objects.filter(is_published=True).exclude(slug="")
+    queryset = (
+        Project.objects.filter(is_published=True)
+        .exclude(slug="")
+        .select_related('client')
+        .prefetch_related(
+            'tech_stack', 'images', 'features', 'mobile_applications',
+            'desktop_applications', 'web_applications',
+        )
+    )
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -53,7 +61,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     """
     Retrieves details for a specific project.
     """
-    queryset = Project.objects.filter(is_published=True).exclude(slug="")
+    queryset = ProjectListView.queryset
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -68,8 +76,10 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
     permission_classes = [LocalOrHasAPIKey]
 
     def get_queryset(self):
-        return Project.objects.filter(is_published=True).exclude(slug="").prefetch_related(
+        return Project.objects.filter(is_published=True).exclude(slug="").select_related('client').prefetch_related(
             'tech_stack',
+            'images',
+            'features',
             'mobile_applications',  # Changed from mobileapplication_set
             'desktop_applications',  # Changed from desktopapplication_set
             'web_applications',     # Changed from webapplication_set

@@ -34,7 +34,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 
 class AdminAccountWriteSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False, min_length=12)
+    password = serializers.CharField(write_only=True, required=True, min_length=12)
 
     class Meta:
         model = get_user_model()
@@ -42,7 +42,15 @@ class AdminAccountWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        return get_user_model().objects.create_user(password=password, is_staff=True, **validated_data)
+        user = get_user_model().objects.create_user(password=password, is_staff=True, **validated_data)
+        project = ManagedProject.objects.filter(slug="tak-kinship").first()
+        if project:
+            ProjectMembership.objects.get_or_create(
+                project=project,
+                user=user,
+                defaults={"role": ProjectMembership.Role.ADMIN},
+            )
+        return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
@@ -183,13 +191,13 @@ class TestimonialAdminSerializer(serializers.ModelSerializer):
 class FAQAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQ
-        fields = ("id", "title", "description")
+        fields = ("id", "title", "description", "is_published")
 
 
 class GalleryAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gallery
-        fields = ("id", "image")
+        fields = ("id", "image", "is_published")
 
 
 class ContactInfoAdminSerializer(serializers.ModelSerializer):
