@@ -28,7 +28,8 @@ class FAQSerializer(serializers.ModelSerializer):
 class ContactUsMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactUsMessage
-        fields = '__all__'
+        fields = ('id', 'name', 'subject', 'email', 'phone_number', 'message', 'date_sent')
+        read_only_fields = ('id', 'date_sent')
 
 class ContactInfoSeriliazer(serializers.ModelSerializer):
     class Meta:
@@ -99,14 +100,20 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = (
             'id', 
             'title', 
+            'slug',
             'project_category', 
             'images',
             'tech_stack', 
             'quote', 
+            'overview',
+            'problem',
+            'solution',
+            'status',
             'about_project', 
             'challenges_faced',
             'date_published', 
             'duration_of_development', 
+            'is_published',
             'features', 
             'client',
             'mobile_applications',
@@ -115,10 +122,14 @@ class ProjectSerializer(serializers.ModelSerializer):
         )
 
     def get_images(self, obj):
+        images = {}
+        for project_image in obj.images.all():
+            if project_image.image_type not in images and project_image.image:
+                images[project_image.image_type] = project_image.image.url
         return {
-            'background': obj.images.filter(image_type='background').first().image.url if obj.images.filter(image_type='background').first() else None,
-            'about': obj.images.filter(image_type='about').first().image.url if obj.images.filter(image_type='about').first() else None,
-            'challenge': obj.images.filter(image_type='challenge').first().image.url if obj.images.filter(image_type='challenge').first() else None
+            'background': images.get('background'),
+            'about': images.get('about'),
+            'challenge': images.get('challenge'),
         }
 
 class AgreementSerializer(serializers.ModelSerializer):

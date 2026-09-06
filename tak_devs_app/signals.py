@@ -51,6 +51,30 @@ def _deliver_contact_notifications(messages, contact_message_id):
             extra={'contact_message_id': contact_message_id},
         )
 
+
+def _queue_admin_notifications(*, subject, plain_text, html, event_id, reply_to=None):
+    """Queue private Resend messages for every configured administrator."""
+    messages = []
+    for admin_email in getattr(settings, 'ADMIN_EMAILS', []):
+        message = {
+            'from': settings.RESEND_FROM_EMAIL,
+            'to': [admin_email],
+            'subject': subject,
+            'html': html,
+            'text': plain_text,
+        }
+        if reply_to:
+            message['reply_to'] = reply_to
+        messages.append(message)
+
+    if not messages:
+        logger.warning(
+            "Admin notification skipped because no admin email is configured",
+            extra={'event_id': event_id},
+        )
+        return
+    email_executor.submit(_deliver_contact_notifications, messages, event_id)
+
 # Define default policy text as constants
 POLICY_DEFAULT_TEXT = """1. Information We Collect
 We collect personal information such as your name, phone number, and usage data to provide and improve our services.
@@ -151,13 +175,11 @@ You can view this testimonial in the admin panel:
 </html>
         """
         
-        send_mail(
-            subject,
-            plain_message,
-            settings.EMAIL_HOST_USER,
-            [settings.ADMIN_EMAIL],  # Add this to your settings.py
-            html_message=html_message,
-            fail_silently=False,
+        _queue_admin_notifications(
+            subject=subject,
+            plain_text=plain_message,
+            html=html_message,
+            event_id=instance.pk,
         )
 
 @receiver(post_save, sender=ProjectClient)
@@ -221,13 +243,11 @@ You can view this feedback in the admin panel:
 </html>
         """
         
-        send_mail(
-            subject,
-            plain_message,
-            settings.EMAIL_HOST_USER,
-            [settings.ADMIN_EMAIL],  # Add this to your settings.py 
-            html_message=html_message,
-            fail_silently=False,
+        _queue_admin_notifications(
+            subject=subject,
+            plain_text=plain_message,
+            html=html_message,
+            event_id=instance.pk,
         )
 
 @receiver(post_save, sender=Project)

@@ -1,8 +1,10 @@
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
-from django.test import SimpleTestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 
+from .models import ContactUsMessage
+from .serializers import ContactUsMessageSerializer
 from .signals import _deliver_contact_notifications, notify_admin_contact_form
 
 
@@ -53,3 +55,22 @@ class ContactNotificationDeliveryTests(SimpleTestCase):
             timeout=10,
         )
         response.raise_for_status.assert_called_once_with()
+
+
+class PublicContactSerializerTests(TestCase):
+    @patch("tak_devs_app.signals.email_executor.submit")
+    def test_public_submission_cannot_set_handling_fields(self, _submit):
+        serializer = ContactUsMessageSerializer(data={
+            "name": "Visitor",
+            "subject": "Hello",
+            "email": "visitor@example.com",
+            "phone_number": "0700000000",
+            "message": "Please contact me.",
+            "handled_at": "2026-09-06T09:00:00Z",
+            "handled_by": 1,
+        })
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        message = serializer.save()
+        self.assertIsNone(message.handled_at)
+        self.assertIsNone(message.handled_by)
