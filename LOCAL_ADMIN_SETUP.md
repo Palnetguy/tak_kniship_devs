@@ -6,9 +6,11 @@ repository `.env` contains `DJANGO_USE_SQLITE=True`.
 From this repository, run:
 
 ```powershell
-py -3.12 manage.py migrate
-py -3.12 manage.py createsuperuser
-py -3.12 manage.py runserver 127.0.0.1:8000
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe manage.py migrate
+.\.venv\Scripts\python.exe manage.py createsuperuser
+.\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
 Use the same staff username and password at the Next.js admin application.

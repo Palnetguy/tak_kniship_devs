@@ -5,6 +5,7 @@
 !.elasticbeanstalk/*.global.yml
 
 app_env/ 
+.venv/
 
 #Secret files
 .env
