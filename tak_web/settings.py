@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     'tak_devs_app',
+    'admin_portal',
     "corsheaders",
     'drf_yasg',
 ]
@@ -94,15 +95,26 @@ REDOC_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
     "http://192.168.100.6:3000",
     "https://tak-kinship-devs.vercel.app",
     "https://www.takkinship.com",  
     "https://takkinship.com",  
+    "https://admin.takkinship.com",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'https://takkinship-backend.up.railway.app',
-    'https://app.takkinship.com'
+    'https://app.takkinship.com',
+    'https://admin.takkinship.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     ]
 
 MIDDLEWARE = [

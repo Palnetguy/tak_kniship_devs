@@ -26,6 +26,7 @@ urlpatterns = [
     path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('api/', include('tak_devs_app.urls')),
+    path('api/admin/v1/', include('admin_portal.urls')),
     
     # Add JSON/YAML schema routes
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
