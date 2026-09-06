@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
 import os
 from dotenv import load_dotenv
 
@@ -67,6 +66,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     'tak_devs_app',
+    'admin_portal',
     "corsheaders",
     'drf_yasg',
 ]
@@ -95,15 +95,26 @@ REDOC_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
     "http://192.168.100.6:3000",
     "https://tak-kinship-devs.vercel.app",
     "https://www.takkinship.com",  
     "https://takkinship.com",  
+    "https://admin.takkinship.com",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'https://takkinship-backend.up.railway.app',
-    'https://app.takkinship.com'
+    'https://app.takkinship.com',
+    'https://admin.takkinship.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     ]
 
 MIDDLEWARE = [
@@ -144,23 +155,40 @@ WSGI_APPLICATION = 'tak_web.wsgi.application'
 #     ],
 # }
 
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'admin_login': '10/min',
+    },
+}
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 
-DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('PGDATABASE'),
-                'USER': config('PGUSER'),
-                'PASSWORD': config('PGPASSWORD'),
-                'HOST': config('PGHOST'),
-                'PORT': config('PGPORT'),
-                # Reuse database connections across Gunicorn requests instead
-                # of paying a PostgreSQL handshake on every API call.
-                'CONN_MAX_AGE': 60,
-                'CONN_HEALTH_CHECKS': True,
-            }
+USE_SQLITE = os.getenv('DJANGO_USE_SQLITE', 'False').lower() == 'true'
+
+if USE_SQLITE:
+    # Explicit local-only mode. Production continues to require PostgreSQL.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('PGDATABASE'),
+            'USER': os.getenv('PGUSER'),
+            'PASSWORD': os.getenv('PGPASSWORD'),
+            'HOST': os.getenv('PGHOST'),
+            'PORT': os.getenv('PGPORT'),
+            # Reuse database connections across Gunicorn requests instead
+            # of paying a PostgreSQL handshake on every API call.
+            'CONN_MAX_AGE': 60,
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
 
 # AUTH_USER_MODEL = 'tak_devs_app.User'
@@ -227,18 +255,17 @@ AWS_DEFAULT_ACL = None
 
 
 
-STORAGES = {
-
-    # Media file (image) management   
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-    
-    # CSS and JS file management
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-}
+if USE_SQLITE:
+    # Local development must be usable without production cloud credentials.
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+else:
+    STORAGES = {
+        "default": {"BACKEND": "storages.backends.s3boto3.S3StaticStorage"},
+        "staticfiles": {"BACKEND": "storages.backends.s3boto3.S3StaticStorage"},
+    }
 
 
 # Email Configuration

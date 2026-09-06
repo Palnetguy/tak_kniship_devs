@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission, Group
@@ -20,6 +21,8 @@ class Project(models.Model):
         ('Desktop Application', 'Desktop Application'),
     ]
     title = models.CharField(max_length=255, db_index=True)
+    # A stable public identifier. Titles can change; URLs and integrations should not.
+    slug = models.SlugField(max_length=255, unique=True, db_index=True)
     project_category = models.CharField(
         max_length=50, 
         choices=PROJECT_CATEGORY_CHOICES, 
@@ -27,10 +30,15 @@ class Project(models.Model):
     )
     tech_stack = models.ManyToManyField(TechStack, blank=True)
     quote = models.CharField(max_length=255, blank=True)
+    overview = models.TextField(blank=True)
+    problem = models.TextField(blank=True)
+    solution = models.TextField(blank=True)
+    status = models.CharField(max_length=80, blank=True)
     about_project = models.TextField()
     challenges_faced = models.TextField(blank=True)
     date_published = models.DateField(db_index=True)
     duration_of_development = models.IntegerField()
+    is_published = models.BooleanField(default=True)
 
     @property
     def background_image(self):
@@ -106,6 +114,7 @@ class TeamMember(models.Model):
     linkedin = models.CharField(max_length=100)
     twitter = models.CharField(max_length=100, blank=True)
     order = models.PositiveIntegerField(default=0)  # New field for ordering
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -121,17 +130,20 @@ class Testimonial(models.Model):
     name = models.CharField(max_length=100)
     comment = models.TextField()
     job_title = models.CharField(max_length=100)
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 
 class Gallery(models.Model):
     image = models.ImageField(upload_to='gallery_images')
+    is_published = models.BooleanField(default=True)
 
 
 class FAQ(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title
@@ -144,6 +156,11 @@ class ContactUsMessage(models.Model):
     message = models.TextField()
     phone_number = models.CharField(max_length=20)
     date_sent = models.DateTimeField(auto_now_add=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='handled_contact_messages'
+    )
 
     def __str__(self):
         return self.subject
