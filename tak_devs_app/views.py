@@ -139,7 +139,7 @@ class WorkExperienceDetailView(generics.ListAPIView):
 class ContactInfoView(generics.ListAPIView):
     queryset = ContactInfo.objects.all()
     serializer_class = ContactInfoSeriliazer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 class MobileApplicationListView(generics.ListAPIView):
     serializer_class = MobileApplicationSerializer

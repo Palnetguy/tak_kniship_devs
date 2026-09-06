@@ -4,7 +4,7 @@ from pathlib import Path
 from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 
-from tak_devs_app.models import Project, ProjectImage, TeamMember, TechStack
+from tak_devs_app.models import ContactInfo, Project, ProjectImage, TeamMember, TechStack
 
 
 PROJECTS = (
@@ -123,3 +123,14 @@ class Command(BaseCommand):
                 with image_path.open("rb") as handle:
                     member.profile_picture.save(image_path.name, File(handle), save=True)
             self.stdout.write(self.style.SUCCESS(f"Imported {member.name}"))
+
+        ContactInfo.objects.update_or_create(
+            company_name="TAK Kinship",
+            defaults={
+                "location": "Kakoba Division, Mbarara, Uganda",
+                "email": "info@takkinship.com",
+                "phone_number": "+256 700 000 000",
+                "linkedIn": "https://www.linkedin.com/company/takkinship/",
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("Imported TAK Kinship contact information."))
