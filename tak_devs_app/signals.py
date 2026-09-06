@@ -5,6 +5,7 @@ import requests
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
+from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from .models import ContactUsMessage, Project, Agreement, Testimonial, ProjectClient
@@ -104,6 +105,17 @@ These Terms shall be governed by the laws of Uganda, without regard to its confl
 def notify_new_testimonial(sender, instance, created, **kwargs):
     """Send email notification when a new testimonial is submitted"""
     if created:
+        admin_email = getattr(settings, 'ADMIN_EMAIL', None) or next(
+            iter(getattr(settings, 'ADMIN_EMAILS', [])),
+            None,
+        )
+        if not admin_email:
+            logger.warning(
+                "Testimonial notification skipped because no admin email is configured",
+                extra={'testimonial_id': instance.pk},
+            )
+            return
+
         subject = f"New Testimonial Received from {instance.name}"
         
         plain_message = f"""
@@ -155,7 +167,7 @@ You can view this testimonial in the admin panel:
             subject,
             plain_message,
             settings.EMAIL_HOST_USER,
-            [settings.ADMIN_EMAIL],  # Add this to your settings.py
+            [admin_email],
             html_message=html_message,
             # A notification failure must never make a successfully saved
             # testimonial look like a failed submission in TAK Admin.
