@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission, Group
@@ -144,6 +145,11 @@ class ContactUsMessage(models.Model):
     message = models.TextField()
     phone_number = models.CharField(max_length=20)
     date_sent = models.DateTimeField(auto_now_add=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='handled_contact_messages'
+    )
 
     def __str__(self):
         return self.subject

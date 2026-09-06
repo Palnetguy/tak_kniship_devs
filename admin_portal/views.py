@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Count
+from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -7,10 +8,18 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from .models import AuditEvent, ManagedProject
 from .permissions import IsTAKAdmin
-from .serializers import AdminUserSerializer, AuditEventSerializer, ManagedProjectSerializer
+from .serializers import (
+    AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
+    ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
+    ManagedProjectSerializer, PortfolioProjectSerializer, TeamMemberAdminSerializer,
+    TestimonialAdminSerializer,
+)
+from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, Testimonial
 
 
 def record_event(*, actor, action, project=None, target_type="", target_id="", metadata=None):
@@ -113,3 +122,79 @@ class ProjectDetailView(APIView):
     def get(self, request, slug):
         project = self.get_object(slug)
         return Response({"project": ManagedProjectSerializer(project).data})
+
+
+class AuditedModelViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsTAKAdmin,)
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
+    audit_namespace = "admin.content"
+
+    def _record(self, action, instance):
+        record_event(
+            actor=self.request.user,
+            action=f"{self.audit_namespace}.{action}",
+            target_type=instance._meta.label_lower,
+            target_id=instance.pk,
+        )
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._record("created", instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._record("updated", instance)
+
+    def perform_destroy(self, instance):
+        self._record("deleted", instance)
+        instance.delete()
+
+
+class PortfolioProjectViewSet(AuditedModelViewSet):
+    queryset = Project.objects.prefetch_related("tech_stack").order_by("-date_published", "-id")
+    serializer_class = PortfolioProjectSerializer
+    audit_namespace = "admin.portfolio"
+
+
+class TeamMemberViewSet(AuditedModelViewSet):
+    queryset = TeamMember.objects.all().order_by("order", "name")
+    serializer_class = TeamMemberAdminSerializer
+    audit_namespace = "admin.team"
+
+
+class TestimonialViewSet(AuditedModelViewSet):
+    queryset = Testimonial.objects.all().order_by("name")
+    serializer_class = TestimonialAdminSerializer
+    audit_namespace = "admin.testimonials"
+
+
+class FAQViewSet(AuditedModelViewSet):
+    queryset = FAQ.objects.all().order_by("id")
+    serializer_class = FAQAdminSerializer
+    audit_namespace = "admin.faqs"
+
+
+class GalleryViewSet(AuditedModelViewSet):
+    queryset = Gallery.objects.all().order_by("id")
+    serializer_class = GalleryAdminSerializer
+    audit_namespace = "admin.media"
+
+
+class ContactInfoViewSet(AuditedModelViewSet):
+    queryset = ContactInfo.objects.all().order_by("id")
+    serializer_class = ContactInfoAdminSerializer
+    audit_namespace = "admin.contact_info"
+
+
+class ContactMessageViewSet(AuditedModelViewSet):
+    queryset = ContactUsMessage.objects.select_related("handled_by").order_by("-date_sent")
+    serializer_class = ContactMessageAdminSerializer
+    audit_namespace = "admin.messages"
+    http_method_names = ("get", "patch", "head", "options")
+
+    def perform_update(self, serializer):
+        instance = serializer.save(
+            handled_by=self.request.user if serializer.validated_data.get("handled_at") else None,
+            handled_at=serializer.validated_data.get("handled_at") or None,
+        )
+        self._record("updated", instance)

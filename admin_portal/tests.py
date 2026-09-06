@@ -3,6 +3,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from .models import AuditEvent, ManagedProject
+from tak_devs_app.models import ContactUsMessage, FAQ
 
 
 class AdminPortalApiTests(TestCase):
@@ -50,3 +51,35 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["user"]["username"], "tak-admin")
         self.assertTrue(AuditEvent.objects.filter(action="admin.auth.signed_in").exists())
+
+    def test_staff_member_can_manage_faqs_and_records_the_change(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            "/api/admin/v1/faqs/",
+            {"title": "How do we begin?", "description": "Start with a conversation."},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(FAQ.objects.filter(title="How do we begin?").exists())
+        self.assertTrue(AuditEvent.objects.filter(action="admin.faqs.created").exists())
+
+    def test_staff_member_can_mark_a_contact_message_handled(self):
+        message = ContactUsMessage.objects.create(
+            name="A client",
+            subject="Website enquiry",
+            email="client@example.com",
+            message="I would like to work with TAK.",
+            phone_number="0700000000",
+        )
+        self.client.force_login(self.user)
+        response = self.client.patch(
+            f"/api/admin/v1/messages/{message.id}/",
+            {"handled_at": "2026-09-06T09:00:00Z"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        message.refresh_from_db()
+        self.assertEqual(message.handled_by, self.user)
+        self.assertIsNotNone(message.handled_at)
