@@ -39,7 +39,10 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='project',
             name='slug',
-            field=models.SlugField(blank=True, max_length=255, null=True),
+            # Use a plain CharField while data is being populated. SlugField
+            # implicitly creates a PostgreSQL pattern index, which would be
+            # scheduled a second time when the final unique SlugField is added.
+            field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
             model_name='project',
