@@ -155,6 +155,12 @@ WSGI_APPLICATION = 'tak_web.wsgi.application'
 #     ],
 # }
 
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'admin_login': '10/min',
+    },
+}
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 

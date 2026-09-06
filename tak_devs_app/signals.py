@@ -5,7 +5,6 @@ import requests
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from .models import ContactUsMessage, Project, Agreement, Testimonial, ProjectClient
@@ -51,6 +50,30 @@ def _deliver_contact_notifications(messages, contact_message_id):
             "Contact notification delivery failed",
             extra={'contact_message_id': contact_message_id},
         )
+
+
+def _queue_admin_notifications(*, subject, plain_text, html, event_id, reply_to=None):
+    """Queue private Resend messages for every configured administrator."""
+    messages = []
+    for admin_email in getattr(settings, 'ADMIN_EMAILS', []):
+        message = {
+            'from': settings.RESEND_FROM_EMAIL,
+            'to': [admin_email],
+            'subject': subject,
+            'html': html,
+            'text': plain_text,
+        }
+        if reply_to:
+            message['reply_to'] = reply_to
+        messages.append(message)
+
+    if not messages:
+        logger.warning(
+            "Admin notification skipped because no admin email is configured",
+            extra={'event_id': event_id},
+        )
+        return
+    email_executor.submit(_deliver_contact_notifications, messages, event_id)
 
 # Define default policy text as constants
 POLICY_DEFAULT_TEXT = """1. Information We Collect
@@ -105,17 +128,6 @@ These Terms shall be governed by the laws of Uganda, without regard to its confl
 def notify_new_testimonial(sender, instance, created, **kwargs):
     """Send email notification when a new testimonial is submitted"""
     if created:
-        admin_email = getattr(settings, 'ADMIN_EMAIL', None) or next(
-            iter(getattr(settings, 'ADMIN_EMAILS', [])),
-            None,
-        )
-        if not admin_email:
-            logger.warning(
-                "Testimonial notification skipped because no admin email is configured",
-                extra={'testimonial_id': instance.pk},
-            )
-            return
-
         subject = f"New Testimonial Received from {instance.name}"
         
         plain_message = f"""
@@ -163,15 +175,11 @@ You can view this testimonial in the admin panel:
 </html>
         """
         
-        send_mail(
-            subject,
-            plain_message,
-            settings.EMAIL_HOST_USER,
-            [admin_email],
-            html_message=html_message,
-            # A notification failure must never make a successfully saved
-            # testimonial look like a failed submission in TAK Admin.
-            fail_silently=True,
+        _queue_admin_notifications(
+            subject=subject,
+            plain_text=plain_message,
+            html=html_message,
+            event_id=instance.pk,
         )
 
 @receiver(post_save, sender=ProjectClient)
@@ -235,13 +243,11 @@ You can view this feedback in the admin panel:
 </html>
         """
         
-        send_mail(
-            subject,
-            plain_message,
-            settings.EMAIL_HOST_USER,
-            [settings.ADMIN_EMAIL],  # Add this to your settings.py 
-            html_message=html_message,
-            fail_silently=False,
+        _queue_admin_notifications(
+            subject=subject,
+            plain_text=plain_message,
+            html=html_message,
+            event_id=instance.pk,
         )
 
 @receiver(post_save, sender=Project)

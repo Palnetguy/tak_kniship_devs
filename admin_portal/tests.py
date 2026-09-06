@@ -1,13 +1,15 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from .models import AuditEvent, ManagedProject
+from .models import AuditEvent, ManagedProject, ProjectMembership
 from tak_devs_app.models import ContactUsMessage, FAQ
 
 
 class AdminPortalApiTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             username="tak-admin",
@@ -19,6 +21,24 @@ class AdminPortalApiTests(TestCase):
             name="Test platform",
             project_type=ManagedProject.ProjectType.API,
             module_key="test-platform-api",
+        )
+        website_project, _ = ManagedProject.objects.get_or_create(
+            slug="tak-kinship",
+            defaults={
+                "name": "TAK Kinship",
+                "project_type": ManagedProject.ProjectType.WEBSITE,
+                "module_key": "tak-kinship-website",
+            },
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.user,
+            role=ProjectMembership.Role.ADMIN,
+        )
+        ProjectMembership.objects.get_or_create(
+            project=website_project,
+            user=self.user,
+            defaults={"role": ProjectMembership.Role.ADMIN},
         )
 
     def test_dashboard_requires_a_staff_session(self):
@@ -59,6 +79,21 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(response.data["user"]["username"], "tak-admin")
         self.assertTrue(AuditEvent.objects.filter(action="admin.auth.signed_in").exists())
 
+    def test_login_attempts_are_rate_limited(self):
+        self.client.get("/api/admin/v1/auth/csrf/")
+        csrf_token = self.client.cookies["csrftoken"].value
+        responses = [
+            self.client.post(
+                "/api/admin/v1/auth/login/",
+                {"username": "tak-admin", "password": "wrong-password"},
+                format="json",
+                HTTP_X_CSRFTOKEN=csrf_token,
+            )
+            for _ in range(11)
+        ]
+
+        self.assertEqual(responses[-1].status_code, 429)
+
     def test_staff_member_can_manage_faqs_and_records_the_change(self):
         self.client.force_login(self.user)
         response = self.client.post(
@@ -70,6 +105,22 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(FAQ.objects.filter(title="How do we begin?").exists())
         self.assertTrue(AuditEvent.objects.filter(action="admin.faqs.created").exists())
+
+    def test_viewer_cannot_change_website_content(self):
+        ProjectMembership.objects.filter(
+            project__slug="tak-kinship",
+            user=self.user,
+        ).update(role=ProjectMembership.Role.VIEWER)
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            "/api/admin/v1/faqs/",
+            {"title": "Restricted", "description": "Must not be created."},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(FAQ.objects.filter(title="Restricted").exists())
 
     def test_staff_member_can_mark_a_contact_message_handled(self):
         message = ContactUsMessage.objects.create(

@@ -22,7 +22,7 @@ class Project(models.Model):
     ]
     title = models.CharField(max_length=255, db_index=True)
     # A stable public identifier. Titles can change; URLs and integrations should not.
-    slug = models.SlugField(max_length=255, unique=True, db_index=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, db_index=True)
     project_category = models.CharField(
         max_length=50, 
         choices=PROJECT_CATEGORY_CHOICES, 

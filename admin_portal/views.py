@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.db.models import Count
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
@@ -7,12 +8,14 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import AuditEvent, ManagedProject, WebsiteContent
-from .permissions import IsPlatformOwner, IsTAKAdmin
+from .permissions import HasTAKWebsiteAccess, IsPlatformOwner, IsTAKAdmin
 from .serializers import (
     AdminAccountWriteSerializer, AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
     ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
@@ -51,6 +54,8 @@ class CsrfView(APIView):
 @method_decorator(csrf_protect, name="dispatch")
 class LoginView(APIView):
     permission_classes = (AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "admin_login"
 
     def post(self, request):
         username = str(request.data.get("username", "")).strip()
@@ -114,7 +119,7 @@ class DashboardView(APIView):
 class WebsiteOverviewView(APIView):
     """TAK Kinship's current Website module. Other project types add their own modules."""
 
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (HasTAKWebsiteAccess,)
 
     def get(self, request):
         project = ManagedProject.objects.filter(slug="tak-kinship").first()
@@ -167,7 +172,7 @@ class AdminAccountDetailView(APIView):
     permission_classes = (IsPlatformOwner,)
 
     def get_object(self, pk):
-        return get_user_model().objects.get(pk=pk, is_staff=True)
+        return get_object_or_404(get_user_model(), pk=pk, is_staff=True)
 
     def patch(self, request, pk):
         account = self.get_object(pk)
@@ -185,6 +190,11 @@ class ActivityListView(APIView):
 
     def get(self, request):
         events = AuditEvent.objects.select_related("project", "actor")
+        if not request.user.is_superuser:
+            events = events.filter(
+                Q(project__memberships__user=request.user, project__memberships__is_active=True)
+                | Q(project__isnull=True)
+            ).distinct()
         project = request.query_params.get("project")
         action = request.query_params.get("action")
         if project:
@@ -199,6 +209,8 @@ class ProjectListView(APIView):
 
     def get(self, request):
         projects = ManagedProject.objects.annotate(member_count=Count("memberships", distinct=True))
+        if not request.user.is_superuser:
+            projects = projects.filter(memberships__user=request.user, memberships__is_active=True)
         return Response({"projects": ManagedProjectSerializer(projects, many=True).data})
 
 
@@ -206,7 +218,13 @@ class ProjectDetailView(APIView):
     permission_classes = (IsTAKAdmin,)
 
     def get_object(self, slug):
-        return ManagedProject.objects.annotate(member_count=Count("memberships", distinct=True)).get(slug=slug)
+        projects = ManagedProject.objects.annotate(member_count=Count("memberships", distinct=True))
+        if not self.request.user.is_superuser:
+            projects = projects.filter(
+                memberships__user=self.request.user,
+                memberships__is_active=True,
+            )
+        return get_object_or_404(projects, slug=slug)
 
     def get(self, request, slug):
         project = self.get_object(slug)
@@ -242,6 +260,7 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
 
 
 class WebsiteContentViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     serializer_class = WebsiteContentSerializer
     audit_namespace = "admin.website_content"
 
@@ -255,86 +274,110 @@ class WebsiteContentViewSet(AuditedModelViewSet):
 
 
 class PortfolioProjectViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = Project.objects.prefetch_related("tech_stack").order_by("-date_published", "-id")
     serializer_class = PortfolioProjectSerializer
     audit_namespace = "admin.portfolio"
 
 
 class ProjectImageViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = ProjectImage.objects.select_related("project").order_by("project_id", "image_type", "order", "id")
     serializer_class = ProjectImageAdminSerializer
     audit_namespace = "admin.project_images"
 
 
 class ProjectFeatureViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = ProjectFeature.objects.select_related("project").order_by("project_id", "id")
     serializer_class = ProjectFeatureAdminSerializer
     audit_namespace = "admin.project_features"
 
 
 class ProjectClientViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = ProjectClient.objects.select_related("project").order_by("project_id")
     serializer_class = ProjectClientAdminSerializer
     audit_namespace = "admin.project_clients"
 
 
 class MobileApplicationViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = MobileApplication.objects.select_related("project").order_by("project_id", "name")
     serializer_class = MobileApplicationAdminSerializer
     audit_namespace = "admin.mobile_applications"
 
 
 class DesktopApplicationViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = DesktopApplication.objects.select_related("project").order_by("project_id", "name")
     serializer_class = DesktopApplicationAdminSerializer
     audit_namespace = "admin.desktop_applications"
 
 
 class WebApplicationViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = WebApplication.objects.select_related("project").order_by("project_id", "name")
     serializer_class = WebApplicationAdminSerializer
     audit_namespace = "admin.web_applications"
 
 
 class TeamMemberViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = TeamMember.objects.all().order_by("order", "name")
     serializer_class = TeamMemberAdminSerializer
     audit_namespace = "admin.team"
 
 
 class TestimonialViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = Testimonial.objects.all().order_by("name")
     serializer_class = TestimonialAdminSerializer
     audit_namespace = "admin.testimonials"
 
 
 class FAQViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = FAQ.objects.all().order_by("id")
     serializer_class = FAQAdminSerializer
     audit_namespace = "admin.faqs"
 
 
 class GalleryViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = Gallery.objects.all().order_by("id")
     serializer_class = GalleryAdminSerializer
     audit_namespace = "admin.media"
 
 
 class ContactInfoViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = ContactInfo.objects.all().order_by("id")
     serializer_class = ContactInfoAdminSerializer
     audit_namespace = "admin.contact_info"
 
+    def perform_create(self, serializer):
+        if ContactInfo.objects.exists():
+            raise ValidationError(
+                {"detail": "Contact information already exists; update the existing record."}
+            )
+        super().perform_create(serializer)
+
 
 class ContactMessageViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
     queryset = ContactUsMessage.objects.select_related("handled_by").order_by("-date_sent")
     serializer_class = ContactMessageAdminSerializer
     audit_namespace = "admin.messages"
     http_method_names = ("get", "patch", "head", "options")
 
     def perform_update(self, serializer):
-        instance = serializer.save(
-            handled_by=self.request.user if serializer.validated_data.get("handled_at") else None,
-            handled_at=serializer.validated_data.get("handled_at") or None,
-        )
+        if "handled_at" in serializer.validated_data:
+            handled_at = serializer.validated_data.get("handled_at")
+            instance = serializer.save(
+                handled_by=self.request.user if handled_at else None,
+                handled_at=handled_at,
+            )
+        else:
+            instance = serializer.save()
         self._record("updated", instance)
