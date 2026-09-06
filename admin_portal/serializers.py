@@ -79,14 +79,14 @@ class PortfolioProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = (
             "id", "title", "project_category", "quote", "about_project", "challenges_faced",
-            "date_published", "duration_of_development", "tech_stack",
+            "date_published", "duration_of_development", "is_published", "tech_stack",
         )
 
 
 class TeamMemberAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamMember
-        fields = ("id", "profile_picture", "name", "role", "biography", "instagram", "linkedin", "twitter", "order")
+        fields = ("id", "profile_picture", "name", "role", "biography", "instagram", "linkedin", "twitter", "order", "is_published")
 
 
 class TestimonialAdminSerializer(serializers.ModelSerializer):

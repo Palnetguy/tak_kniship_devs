@@ -32,6 +32,7 @@ class Project(models.Model):
     challenges_faced = models.TextField(blank=True)
     date_published = models.DateField(db_index=True)
     duration_of_development = models.IntegerField()
+    is_published = models.BooleanField(default=True)
 
     @property
     def background_image(self):
@@ -107,6 +108,7 @@ class TeamMember(models.Model):
     linkedin = models.CharField(max_length=100)
     twitter = models.CharField(max_length=100, blank=True)
     order = models.PositiveIntegerField(default=0)  # New field for ordering
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -122,17 +124,20 @@ class Testimonial(models.Model):
     name = models.CharField(max_length=100)
     comment = models.TextField()
     job_title = models.CharField(max_length=100)
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 
 class Gallery(models.Model):
     image = models.ImageField(upload_to='gallery_images')
+    is_published = models.BooleanField(default=True)
 
 
 class FAQ(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    is_published = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title

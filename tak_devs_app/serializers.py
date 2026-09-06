@@ -107,6 +107,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'challenges_faced',
             'date_published', 
             'duration_of_development', 
+            'is_published',
             'features', 
             'client',
             'mobile_applications',

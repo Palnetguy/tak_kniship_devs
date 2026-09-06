@@ -31,7 +31,7 @@ class ProjectListView(generics.ListAPIView):
     """
     Lists all projects with their features, tech stack, and client information.
     """
-    queryset = Project.objects.all()
+    queryset = Project.objects.filter(is_published=True)
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -45,7 +45,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     """
     Retrieves details for a specific project.
     """
-    queryset = Project.objects.all()
+    queryset = Project.objects.filter(is_published=True)
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -99,20 +99,20 @@ class TeamMemberListView(generics.ListAPIView):
     
     def get_queryset(self):
         # Explicitly order by 'order' field and then by 'name'
-        return TeamMember.objects.all().order_by('order', 'name')
+        return TeamMember.objects.filter(is_published=True).order_by('order', 'name')
 
 class TestimonialListView(generics.ListAPIView):
-    queryset = Testimonial.objects.all()
+    queryset = Testimonial.objects.filter(is_published=True)
     serializer_class = TestimonialSerializer
     permission_classes = [HasAPIKey]
 
 class GalleryListView(generics.ListAPIView):
-    queryset = Gallery.objects.all()
+    queryset = Gallery.objects.filter(is_published=True)
     serializer_class = GallerySerializer
     permission_classes = [HasAPIKey]
 
 class FAQListView(generics.ListAPIView):
-    queryset = FAQ.objects.all()
+    queryset = FAQ.objects.filter(is_published=True)
     serializer_class = FAQSerializer
     permission_classes = [HasAPIKey]
 
