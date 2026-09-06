@@ -7,13 +7,39 @@ from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Pro
 
 class AdminUserSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
+    project_access = serializers.SerializerMethodField()
 
     class Meta:
         model = get_user_model()
-        fields = ("id", "username", "email", "first_name", "last_name", "display_name", "is_active", "is_staff", "is_superuser")
+        fields = ("id", "username", "email", "first_name", "last_name", "display_name", "is_active", "is_staff", "is_superuser", "project_access")
 
     def get_display_name(self, user):
         return user.get_full_name() or user.username
+
+    def get_project_access(self, user):
+        return [{"project": membership.project.slug, "role": membership.role}
+                for membership in user.project_memberships.select_related("project").filter(is_active=True)]
+
+
+class AdminAccountWriteSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, min_length=12)
+
+    class Meta:
+        model = get_user_model()
+        fields = ("username", "email", "first_name", "last_name", "password", "is_active")
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        return get_user_model().objects.create_user(password=password, is_staff=True, **validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        for attribute, value in validated_data.items():
+            setattr(instance, attribute, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 
 class ManagedProjectSerializer(serializers.ModelSerializer):

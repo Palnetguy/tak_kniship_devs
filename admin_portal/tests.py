@@ -90,3 +90,21 @@ class AdminPortalApiTests(TestCase):
         message.refresh_from_db()
         self.assertEqual(message.handled_by, self.user)
         self.assertIsNotNone(message.handled_at)
+
+    def test_platform_owner_can_create_and_update_an_admin_account(self):
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
+        self.client.force_login(self.user)
+        created = self.client.post(
+            "/api/admin/v1/accounts/",
+            {"username": "content-editor", "email": "editor@example.com", "password": "a-secure-test-password"},
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        updated = self.client.patch(
+            f"/api/admin/v1/accounts/{created.data['account']['id']}/",
+            {"first_name": "Content", "is_active": False},
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200)
+        self.assertFalse(updated.data["account"]["is_active"])

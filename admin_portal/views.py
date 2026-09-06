@@ -12,9 +12,9 @@ from rest_framework import viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from .models import AuditEvent, ManagedProject
-from .permissions import IsTAKAdmin
+from .permissions import IsPlatformOwner, IsTAKAdmin
 from .serializers import (
-    AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
+    AdminAccountWriteSerializer, AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
     ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
     ManagedProjectSerializer, PortfolioProjectSerializer, TeamMemberAdminSerializer,
     TestimonialAdminSerializer,
@@ -123,6 +123,8 @@ class WebsiteOverviewView(APIView):
                     "portfolio_projects": Project.objects.count(),
                     "team_members": TeamMember.objects.count(),
                     "content_items": FAQ.objects.count(),
+                    "media_items": Gallery.objects.count(),
+                    "testimonials": Testimonial.objects.count(),
                 },
                 "activity": AuditEventSerializer(activity[:8], many=True).data,
             }
@@ -130,11 +132,49 @@ class WebsiteOverviewView(APIView):
 
 
 class AdminAccountListView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get(self, request):
         accounts = get_user_model().objects.filter(is_staff=True).order_by("username")
         return Response({"accounts": AdminUserSerializer(accounts, many=True).data})
+
+    def post(self, request):
+        serializer = AdminAccountWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        account = serializer.save()
+        record_event(actor=request.user, action="admin.accounts.created", target_type="auth.user", target_id=account.pk)
+        return Response({"account": AdminUserSerializer(account).data}, status=status.HTTP_201_CREATED)
+
+
+class AdminAccountDetailView(APIView):
+    permission_classes = (IsPlatformOwner,)
+
+    def get_object(self, pk):
+        return get_user_model().objects.get(pk=pk, is_staff=True)
+
+    def patch(self, request, pk):
+        account = self.get_object(pk)
+        if account == request.user and request.data.get("is_active") is False:
+            return Response({"detail": "You cannot deactivate your own account."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = AdminAccountWriteSerializer(account, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        account = serializer.save()
+        record_event(actor=request.user, action="admin.accounts.updated", target_type="auth.user", target_id=account.pk)
+        return Response({"account": AdminUserSerializer(account).data})
+
+
+class ActivityListView(APIView):
+    permission_classes = (IsTAKAdmin,)
+
+    def get(self, request):
+        events = AuditEvent.objects.select_related("project", "actor")
+        project = request.query_params.get("project")
+        action = request.query_params.get("action")
+        if project:
+            events = events.filter(project__slug=project)
+        if action:
+            events = events.filter(action__icontains=action)
+        return Response({"activity": AuditEventSerializer(events[:100], many=True).data})
 
 
 class ProjectListView(APIView):

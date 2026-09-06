@@ -4,7 +4,9 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CsrfView,
     CurrentUserView,
+    ActivityListView,
     AdminAccountListView,
+    AdminAccountDetailView,
     DashboardView,
     LoginView,
     LogoutView,
@@ -36,6 +38,8 @@ urlpatterns = [
     path("auth/me/", CurrentUserView.as_view(), name="admin-current-user"),
     path("dashboard/", DashboardView.as_view(), name="admin-dashboard"),
     path("accounts/", AdminAccountListView.as_view(), name="admin-accounts"),
+    path("accounts/<int:pk>/", AdminAccountDetailView.as_view(), name="admin-account-detail"),
+    path("activity/", ActivityListView.as_view(), name="admin-activity"),
     path("website/overview/", WebsiteOverviewView.as_view(), name="website-overview"),
     path("projects/", ProjectListView.as_view(), name="admin-projects"),
     path("projects/<slug:slug>/", ProjectDetailView.as_view(), name="admin-project-detail"),
