@@ -91,3 +91,18 @@ class AuditEvent(models.Model):
 
     def __str__(self):
         return self.action
+
+
+class WebsiteContent(models.Model):
+    """Canonical editable content payload for a TAK website route or section."""
+
+    project = models.ForeignKey(ManagedProject, on_delete=models.CASCADE, related_name="website_content")
+    key = models.SlugField()
+    value = models.JSONField(default=dict)
+    is_published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["project", "key"], name="unique_website_content_key")]
+        ordering = ["key"]

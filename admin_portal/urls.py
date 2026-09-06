@@ -13,6 +13,8 @@ from .views import (
     ProjectDetailView,
     ProjectListView,
     WebsiteOverviewView,
+    PublicWebsiteContentView,
+    WebsiteContentViewSet,
     PortfolioProjectViewSet,
     TeamMemberViewSet,
     TestimonialViewSet,
@@ -30,6 +32,7 @@ router.register("faqs", FAQViewSet, basename="admin-faqs")
 router.register("media", GalleryViewSet, basename="admin-media")
 router.register("contact-info", ContactInfoViewSet, basename="admin-contact-info")
 router.register("messages", ContactMessageViewSet, basename="admin-messages")
+router.register("website-content", WebsiteContentViewSet, basename="admin-website-content")
 
 urlpatterns = [
     path("auth/csrf/", CsrfView.as_view(), name="admin-csrf"),
@@ -41,6 +44,7 @@ urlpatterns = [
     path("accounts/<int:pk>/", AdminAccountDetailView.as_view(), name="admin-account-detail"),
     path("activity/", ActivityListView.as_view(), name="admin-activity"),
     path("website/overview/", WebsiteOverviewView.as_view(), name="website-overview"),
+    path("public/website-content/<slug:key>/", PublicWebsiteContentView.as_view(), name="public-website-content"),
     path("projects/", ProjectListView.as_view(), name="admin-projects"),
     path("projects/<slug:slug>/", ProjectDetailView.as_view(), name="admin-project-detail"),
     path("", include(router.urls)),

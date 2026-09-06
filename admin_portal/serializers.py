@@ -1,8 +1,15 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import AuditEvent, ManagedProject, ProjectMembership
-from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, Testimonial
+from .models import AuditEvent, ManagedProject, ProjectMembership, WebsiteContent
+
+
+class WebsiteContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WebsiteContent
+        fields = ("id", "project", "key", "value", "is_published", "created_at", "updated_at")
+        read_only_fields = ("id", "project", "created_at", "updated_at")
+from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, TechStack, Testimonial
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -75,12 +82,36 @@ class AuditEventSerializer(serializers.ModelSerializer):
 
 
 class PortfolioProjectSerializer(serializers.ModelSerializer):
+    tech_stack_names = serializers.ListField(child=serializers.CharField(max_length=120), write_only=True, required=False)
+    tech_stack_labels = serializers.SerializerMethodField()
+
     class Meta:
         model = Project
         fields = (
             "id", "title", "project_category", "quote", "about_project", "challenges_faced",
-            "date_published", "duration_of_development", "is_published", "tech_stack",
+            "date_published", "duration_of_development", "is_published", "tech_stack", "tech_stack_names", "tech_stack_labels",
         )
+
+    def get_tech_stack_labels(self, project):
+        return list(project.tech_stack.values_list("language", flat=True))
+
+    def _set_tech_stack(self, project, names):
+        if names is None:
+            return
+        stacks = [TechStack.objects.get_or_create(language=name.strip())[0] for name in names if name.strip()]
+        project.tech_stack.set(stacks)
+
+    def create(self, validated_data):
+        names = validated_data.pop("tech_stack_names", None)
+        project = super().create(validated_data)
+        self._set_tech_stack(project, names)
+        return project
+
+    def update(self, instance, validated_data):
+        names = validated_data.pop("tech_stack_names", None)
+        project = super().update(instance, validated_data)
+        self._set_tech_stack(project, names)
+        return project
 
 
 class TeamMemberAdminSerializer(serializers.ModelSerializer):

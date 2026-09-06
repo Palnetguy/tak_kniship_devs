@@ -11,13 +11,14 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
-from .models import AuditEvent, ManagedProject
+from .models import AuditEvent, ManagedProject, WebsiteContent
 from .permissions import IsPlatformOwner, IsTAKAdmin
 from .serializers import (
     AdminAccountWriteSerializer, AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
     ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
     ManagedProjectSerializer, PortfolioProjectSerializer, TeamMemberAdminSerializer,
     TestimonialAdminSerializer,
+    WebsiteContentSerializer,
 )
 from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, Testimonial
 
@@ -131,6 +132,17 @@ class WebsiteOverviewView(APIView):
         )
 
 
+class PublicWebsiteContentView(APIView):
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+
+    def get(self, request, key):
+        content = WebsiteContent.objects.filter(project__slug="tak-kinship", key=key, is_published=True).first()
+        if not content:
+            return Response({"detail": "Published content was not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(WebsiteContentSerializer(content).data)
+
+
 class AdminAccountListView(APIView):
     permission_classes = (IsPlatformOwner,)
 
@@ -222,6 +234,19 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         self._record("deleted", instance)
         instance.delete()
+
+
+class WebsiteContentViewSet(AuditedModelViewSet):
+    serializer_class = WebsiteContentSerializer
+    audit_namespace = "admin.website_content"
+
+    def get_queryset(self):
+        return WebsiteContent.objects.filter(project__slug="tak-kinship")
+
+    def perform_create(self, serializer):
+        project = ManagedProject.objects.get(slug="tak-kinship")
+        instance = serializer.save(project=project)
+        self._record("created", instance)
 
 
 class PortfolioProjectViewSet(AuditedModelViewSet):
