@@ -8,3 +8,5 @@ app_env/
 
 #Secret files
 .env
+__pycache__/
+*.py[cod]
