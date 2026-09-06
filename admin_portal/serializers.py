@@ -10,7 +10,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ("id", "username", "email", "first_name", "last_name", "display_name", "is_superuser")
+        fields = ("id", "username", "email", "first_name", "last_name", "display_name", "is_active", "is_staff", "is_superuser")
 
     def get_display_name(self, user):
         return user.get_full_name() or user.username

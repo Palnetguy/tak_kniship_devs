@@ -1,4 +1,4 @@
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db.models import Count
 from django.utils import timezone
 from django.middleware.csrf import get_token
@@ -94,7 +94,7 @@ class DashboardView(APIView):
                 "summary": {
                     "projects": projects.count(),
                     "active_projects": projects.filter(status=ManagedProject.Status.ACTIVE).count(),
-                    "team_memberships": sum(project.memberships.filter(is_active=True).count() for project in projects),
+                    "admin_accounts": get_user_model().objects.filter(is_staff=True, is_active=True).count(),
                     "recent_activity": AuditEvent.objects.count(),
                 },
                 "projects": ManagedProjectSerializer(
@@ -103,6 +103,38 @@ class DashboardView(APIView):
                 "activity": AuditEventSerializer(recent_events, many=True).data,
             }
         )
+
+
+class WebsiteOverviewView(APIView):
+    """TAK Kinship's current Website module. Other project types add their own modules."""
+
+    permission_classes = (IsTAKAdmin,)
+
+    def get(self, request):
+        project = ManagedProject.objects.filter(slug="tak-kinship").first()
+        activity = AuditEvent.objects.select_related("project", "actor")
+        if project:
+            activity = activity.filter(project=project)
+
+        return Response(
+            {
+                "summary": {
+                    "open_enquiries": ContactUsMessage.objects.filter(handled_at__isnull=True).count(),
+                    "portfolio_projects": Project.objects.count(),
+                    "team_members": TeamMember.objects.count(),
+                    "content_items": FAQ.objects.count(),
+                },
+                "activity": AuditEventSerializer(activity[:8], many=True).data,
+            }
+        )
+
+
+class AdminAccountListView(APIView):
+    permission_classes = (IsTAKAdmin,)
+
+    def get(self, request):
+        accounts = get_user_model().objects.filter(is_staff=True).order_by("username")
+        return Response({"accounts": AdminUserSerializer(accounts, many=True).data})
 
 
 class ProjectListView(APIView):
@@ -130,8 +162,10 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
     audit_namespace = "admin.content"
 
     def _record(self, action, instance):
+        website_project = ManagedProject.objects.filter(slug="tak-kinship").first()
         record_event(
             actor=self.request.user,
+            project=website_project,
             action=f"{self.audit_namespace}.{action}",
             target_type=instance._meta.label_lower,
             target_id=instance.pk,

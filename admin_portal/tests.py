@@ -39,6 +39,13 @@ class AdminPortalApiTests(TestCase):
             [project["slug"] for project in projects.data["projects"]],
         )
 
+    def test_staff_member_can_read_the_website_module_overview(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/api/admin/v1/website/overview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("open_enquiries", response.data["summary"])
+
     def test_login_creates_an_audit_event(self):
         self.client.get("/api/admin/v1/auth/csrf/")
         response = self.client.post(
