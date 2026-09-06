@@ -4,7 +4,7 @@ from pathlib import Path
 from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 
-from tak_devs_app.models import Project, ProjectImage, TechStack
+from tak_devs_app.models import Project, ProjectImage, TeamMember, TechStack
 
 
 PROJECTS = (
@@ -58,12 +58,22 @@ PROJECTS = (
     },
 )
 
+TEAM = (
+    ("Tusingwire Martin", "Founder & Team Leader", "Building TAK Kinship has been the most rewarding work of my career. We stay small on purpose, because it keeps us close to the work and close to each other.", "martin.jpg"),
+    ("Masaba Ian Samuel", "Head of Frontend", "I grew into leading our frontend work across web, desktop and mobile, turning half-formed ideas into interfaces that feel effortless.", "ian.jpg"),
+    ("Yonah Odhiambo", "Backend Developer", "I build the reliable server-side systems our apps run on, mostly with Django, and care about doing that work well.", "yonah.jpg"),
+    ("Fuad Michael Lawal", "UI/UX Designer", "I design systems the whole team can rely on, starting with a real problem before drawing a single screen.", "fuad.jpg"),
+    ("Kazibwe David Nelson", "UI/UX Designer", "I design products that make a difference in our own communities, supported by honest feedback and genuine responsibility.", "david.jpg"),
+    ("Lawrence Odhiambo", "Frontend Developer", "We work in fast, honest cycles, learning and adjusting as we go, with a real sense of ownership over what we ship.", "lawrence.jpg"),
+)
+
 
 class Command(BaseCommand):
     help = "Import the existing public portfolio into the local Django database and media storage."
 
     def add_arguments(self, parser):
         parser.add_argument("--source", required=True, help="Directory containing the existing portfolio image files.")
+        parser.add_argument("--team-source", help="Directory containing the existing team image files.")
 
     def handle(self, *args, **options):
         source = Path(options["source"])
@@ -94,3 +104,22 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Imported {project.title}"))
 
         self.stdout.write(self.style.SUCCESS(f"Imported {imported} portfolio projects into local media storage."))
+
+        team_source_value = options.get("team_source")
+        if not team_source_value:
+            return
+        team_source = Path(team_source_value)
+        if not team_source.is_dir():
+            raise CommandError(f"Team image source does not exist: {team_source}")
+        for order, (name, role, biography, filename) in enumerate(TEAM):
+            member, _ = TeamMember.objects.update_or_create(
+                name=name,
+                defaults={"role": role, "biography": biography, "linkedin": "", "order": order, "is_published": True},
+            )
+            image_path = team_source / filename
+            if not image_path.is_file():
+                raise CommandError(f"Missing image for {member.name}: {image_path}")
+            if not member.profile_picture:
+                with image_path.open("rb") as handle:
+                    member.profile_picture.save(image_path.name, File(handle), save=True)
+            self.stdout.write(self.style.SUCCESS(f"Imported {member.name}"))
