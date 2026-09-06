@@ -157,7 +157,9 @@ You can view this testimonial in the admin panel:
             settings.EMAIL_HOST_USER,
             [settings.ADMIN_EMAIL],  # Add this to your settings.py
             html_message=html_message,
-            fail_silently=False,
+            # A notification failure must never make a successfully saved
+            # testimonial look like a failed submission in TAK Admin.
+            fail_silently=True,
         )
 
 @receiver(post_save, sender=ProjectClient)

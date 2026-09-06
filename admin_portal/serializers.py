@@ -177,7 +177,7 @@ class TeamMemberAdminSerializer(serializers.ModelSerializer):
 class TestimonialAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Testimonial
-        fields = ("id", "user_photo", "name", "comment", "job_title")
+        fields = ("id", "user_photo", "name", "comment", "job_title", "is_published")
 
 
 class FAQAdminSerializer(serializers.ModelSerializer):
