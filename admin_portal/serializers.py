@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 from rest_framework import serializers
 
 from .models import AuditEvent, ManagedProject, ProjectMembership, WebsiteContent
@@ -9,7 +10,11 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         model = WebsiteContent
         fields = ("id", "project", "key", "value", "is_published", "created_at", "updated_at")
         read_only_fields = ("id", "project", "created_at", "updated_at")
-from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, TechStack, Testimonial
+from tak_devs_app.models import (
+    ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
+    Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
+    WebApplication,
+)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -88,7 +93,7 @@ class PortfolioProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = (
-            "id", "title", "project_category", "quote", "about_project", "challenges_faced",
+            "id", "title", "slug", "project_category", "quote", "overview", "problem", "solution", "status", "about_project", "challenges_faced",
             "date_published", "duration_of_development", "is_published", "tech_stack", "tech_stack_names", "tech_stack_labels",
         )
 
@@ -103,6 +108,8 @@ class PortfolioProjectSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         names = validated_data.pop("tech_stack_names", None)
+        if not validated_data.get("slug"):
+            validated_data["slug"] = self._available_slug(validated_data["title"])
         project = super().create(validated_data)
         self._set_tech_stack(project, names)
         return project
@@ -112,6 +119,53 @@ class PortfolioProjectSerializer(serializers.ModelSerializer):
         project = super().update(instance, validated_data)
         self._set_tech_stack(project, names)
         return project
+
+    def _available_slug(self, title):
+        base = slugify(title) or "project"
+        candidate = base
+        suffix = 2
+        while Project.objects.filter(slug=candidate).exists():
+            candidate = f"{base}-{suffix}"
+            suffix += 1
+        return candidate
+
+
+class ProjectImageAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImage
+        fields = ("id", "project", "image", "image_type", "caption", "order")
+
+
+class ProjectFeatureAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectFeature
+        fields = ("id", "project", "title", "description")
+
+
+class ProjectClientAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectClient
+        fields = ("id", "project", "name", "location", "rating", "message", "profile_image")
+
+
+class MobileApplicationAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MobileApplication
+        fields = ("id", "project", "name", "version", "icon", "apk", "apk_url", "download_id", "description", "date_released")
+        read_only_fields = ("date_released",)
+
+
+class DesktopApplicationAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DesktopApplication
+        fields = ("id", "project", "name", "version", "icon", "apk", "apk_url", "download_id", "description", "date_released")
+        read_only_fields = ("date_released",)
+
+
+class WebApplicationAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WebApplication
+        fields = ("id", "project", "name", "icon", "url")
 
 
 class TeamMemberAdminSerializer(serializers.ModelSerializer):

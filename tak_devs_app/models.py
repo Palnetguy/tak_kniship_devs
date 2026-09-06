@@ -21,6 +21,8 @@ class Project(models.Model):
         ('Desktop Application', 'Desktop Application'),
     ]
     title = models.CharField(max_length=255, db_index=True)
+    # A stable public identifier. Titles can change; URLs and integrations should not.
+    slug = models.SlugField(max_length=255, unique=True, db_index=True, blank=True)
     project_category = models.CharField(
         max_length=50, 
         choices=PROJECT_CATEGORY_CHOICES, 
@@ -28,6 +30,10 @@ class Project(models.Model):
     )
     tech_stack = models.ManyToManyField(TechStack, blank=True)
     quote = models.CharField(max_length=255, blank=True)
+    overview = models.TextField(blank=True)
+    problem = models.TextField(blank=True)
+    solution = models.TextField(blank=True)
+    status = models.CharField(max_length=80, blank=True)
     about_project = models.TextField()
     challenges_faced = models.TextField(blank=True)
     date_published = models.DateField(db_index=True)

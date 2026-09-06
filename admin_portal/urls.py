@@ -22,10 +22,22 @@ from .views import (
     GalleryViewSet,
     ContactInfoViewSet,
     ContactMessageViewSet,
+    ProjectImageViewSet,
+    ProjectFeatureViewSet,
+    ProjectClientViewSet,
+    MobileApplicationViewSet,
+    DesktopApplicationViewSet,
+    WebApplicationViewSet,
 )
 
 router = DefaultRouter()
 router.register("portfolio", PortfolioProjectViewSet, basename="admin-portfolio")
+router.register("project-images", ProjectImageViewSet, basename="admin-project-images")
+router.register("project-features", ProjectFeatureViewSet, basename="admin-project-features")
+router.register("project-clients", ProjectClientViewSet, basename="admin-project-clients")
+router.register("mobile-applications", MobileApplicationViewSet, basename="admin-mobile-applications")
+router.register("desktop-applications", DesktopApplicationViewSet, basename="admin-desktop-applications")
+router.register("web-applications", WebApplicationViewSet, basename="admin-web-applications")
 router.register("team", TeamMemberViewSet, basename="admin-team")
 router.register("testimonials", TestimonialViewSet, basename="admin-testimonials")
 router.register("faqs", FAQViewSet, basename="admin-faqs")

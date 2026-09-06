@@ -17,10 +17,15 @@ from .serializers import (
     AdminAccountWriteSerializer, AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
     ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
     ManagedProjectSerializer, PortfolioProjectSerializer, TeamMemberAdminSerializer,
-    TestimonialAdminSerializer,
+    TestimonialAdminSerializer, ProjectImageAdminSerializer, ProjectFeatureAdminSerializer,
+    ProjectClientAdminSerializer, MobileApplicationAdminSerializer, DesktopApplicationAdminSerializer,
+    WebApplicationAdminSerializer,
     WebsiteContentSerializer,
 )
-from tak_devs_app.models import ContactInfo, ContactUsMessage, FAQ, Gallery, Project, TeamMember, Testimonial
+from tak_devs_app.models import (
+    ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication, Project,
+    ProjectClient, ProjectFeature, ProjectImage, TeamMember, Testimonial, WebApplication,
+)
 
 
 def record_event(*, actor, action, project=None, target_type="", target_id="", metadata=None):
@@ -253,6 +258,42 @@ class PortfolioProjectViewSet(AuditedModelViewSet):
     queryset = Project.objects.prefetch_related("tech_stack").order_by("-date_published", "-id")
     serializer_class = PortfolioProjectSerializer
     audit_namespace = "admin.portfolio"
+
+
+class ProjectImageViewSet(AuditedModelViewSet):
+    queryset = ProjectImage.objects.select_related("project").order_by("project_id", "image_type", "order", "id")
+    serializer_class = ProjectImageAdminSerializer
+    audit_namespace = "admin.project_images"
+
+
+class ProjectFeatureViewSet(AuditedModelViewSet):
+    queryset = ProjectFeature.objects.select_related("project").order_by("project_id", "id")
+    serializer_class = ProjectFeatureAdminSerializer
+    audit_namespace = "admin.project_features"
+
+
+class ProjectClientViewSet(AuditedModelViewSet):
+    queryset = ProjectClient.objects.select_related("project").order_by("project_id")
+    serializer_class = ProjectClientAdminSerializer
+    audit_namespace = "admin.project_clients"
+
+
+class MobileApplicationViewSet(AuditedModelViewSet):
+    queryset = MobileApplication.objects.select_related("project").order_by("project_id", "name")
+    serializer_class = MobileApplicationAdminSerializer
+    audit_namespace = "admin.mobile_applications"
+
+
+class DesktopApplicationViewSet(AuditedModelViewSet):
+    queryset = DesktopApplication.objects.select_related("project").order_by("project_id", "name")
+    serializer_class = DesktopApplicationAdminSerializer
+    audit_namespace = "admin.desktop_applications"
+
+
+class WebApplicationViewSet(AuditedModelViewSet):
+    queryset = WebApplication.objects.select_related("project").order_by("project_id", "name")
+    serializer_class = WebApplicationAdminSerializer
+    audit_namespace = "admin.web_applications"
 
 
 class TeamMemberViewSet(AuditedModelViewSet):

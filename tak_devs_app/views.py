@@ -6,7 +6,7 @@ from rest_framework import generics
 from tak_web.settings import EMAIL_HOST_USER
 from .models import Agreement, ContactInfo, Project, ProjectClient, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 from .serializers import AgreementSerializer, ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework_api_key.permissions import HasAPIKey
 from django.core.mail import send_mail
@@ -24,6 +24,14 @@ from django.conf import settings
 from django.http import HttpResponse
 
 
+class LocalOrHasAPIKey(BasePermission):
+    """Keep production public APIs key-protected while supporting local site preview."""
+
+    def has_permission(self, request, view):
+        host = request.get_host().split(":")[0]
+        return bool(settings.DEBUG and host in {"127.0.0.1", "localhost"}) or HasAPIKey().has_permission(request, view)
+
+
 def health_check(request):
     return HttpResponse("OK", status=200)
 
@@ -31,7 +39,7 @@ class ProjectListView(generics.ListAPIView):
     """
     Lists all projects with their features, tech stack, and client information.
     """
-    queryset = Project.objects.filter(is_published=True)
+    queryset = Project.objects.filter(is_published=True).exclude(slug="")
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -45,7 +53,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     """
     Retrieves details for a specific project.
     """
-    queryset = Project.objects.filter(is_published=True)
+    queryset = Project.objects.filter(is_published=True).exclude(slug="")
     serializer_class = ProjectSerializer
 
     @swagger_auto_schema(
@@ -57,10 +65,10 @@ class ProjectDetailView(generics.RetrieveAPIView):
 
 class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
     serializer_class = ProjectSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
     def get_queryset(self):
-        return Project.objects.prefetch_related(
+        return Project.objects.filter(is_published=True).exclude(slug="").prefetch_related(
             'tech_stack',
             'mobile_applications',  # Changed from mobileapplication_set
             'desktop_applications',  # Changed from desktopapplication_set
@@ -73,7 +81,7 @@ class ProjectDetailWithApplicationsView(generics.RetrieveAPIView):
 class PolicyDetailAgreement(generics.RetrieveAPIView):
     # queryset = Agreement.objects.all()
     serializer_class = AgreementSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
     # def get_queryset(self):
     #     project_id = self.kwargs.get('project_id')
@@ -85,7 +93,7 @@ class PolicyDetailAgreement(generics.RetrieveAPIView):
     
 class TermsDetailAgreement(generics.RetrieveAPIView):
     serializer_class = AgreementSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
     def get_object(self):
         project_id = self.kwargs.get('project_id')
@@ -95,7 +103,7 @@ class TermsDetailAgreement(generics.RetrieveAPIView):
 
 class TeamMemberListView(generics.ListAPIView):
     serializer_class = TeamMemberSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
     
     def get_queryset(self):
         # Explicitly order by 'order' field and then by 'name'
@@ -104,29 +112,29 @@ class TeamMemberListView(generics.ListAPIView):
 class TestimonialListView(generics.ListAPIView):
     queryset = Testimonial.objects.filter(is_published=True)
     serializer_class = TestimonialSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 class GalleryListView(generics.ListAPIView):
     queryset = Gallery.objects.filter(is_published=True)
     serializer_class = GallerySerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 class FAQListView(generics.ListAPIView):
     queryset = FAQ.objects.filter(is_published=True)
     serializer_class = FAQSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 
 
 class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
     serializer_class = ContactUsMessageSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()
     serializer_class = WorkExperienceSerializer
-    permission_classes = [HasAPIKey]
+    permission_classes = [LocalOrHasAPIKey]
 
 class ContactInfoView(generics.ListAPIView):
     queryset = ContactInfo.objects.all()
