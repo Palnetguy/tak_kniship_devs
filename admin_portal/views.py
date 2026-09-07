@@ -135,7 +135,7 @@ class CurrentUserView(APIView):
 
 
 class DashboardView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get(self, request):
         projects = ManagedProject.objects.all()
@@ -185,7 +185,7 @@ class WebsiteOverviewView(APIView):
 class DeploymentSettingsView(APIView):
     """Report operational readiness without exposing secret values."""
 
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get(self, request):
         return Response({
@@ -246,7 +246,7 @@ class AdminAccountDetailView(APIView):
 
 
 class ActivityListView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get(self, request):
         events = AuditEvent.objects.select_related("project", "actor")
@@ -265,7 +265,7 @@ class ActivityListView(APIView):
 
 
 class ProjectListView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get(self, request):
         projects = ManagedProject.objects.annotate(member_count=Count("memberships", distinct=True))
@@ -275,7 +275,7 @@ class ProjectListView(APIView):
 
 
 class ProjectDetailView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    permission_classes = (IsPlatformOwner,)
 
     def get_object(self, slug):
         projects = ManagedProject.objects.annotate(member_count=Count("memberships", distinct=True))

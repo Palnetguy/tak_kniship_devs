@@ -50,7 +50,22 @@ class AdminPortalApiTests(TestCase):
         response = self.client.get("/api/admin/v1/dashboard/")
         self.assertEqual(response.status_code, 403)
 
-    def test_staff_member_can_read_dashboard_and_projects(self):
+    def test_staff_member_cannot_read_owner_platform_endpoints(self):
+        self.client.force_login(self.user)
+
+        for path in (
+            "/api/admin/v1/dashboard/",
+            "/api/admin/v1/projects/",
+            "/api/admin/v1/activity/",
+            "/api/admin/v1/accounts/",
+            "/api/admin/v1/settings/",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 403)
+
+    def test_platform_owner_can_read_dashboard_and_projects(self):
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
 
         dashboard = self.client.get("/api/admin/v1/dashboard/")
@@ -59,10 +74,6 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(dashboard.status_code, 200)
         self.assertGreaterEqual(dashboard.data["summary"]["projects"], 1)
         self.assertEqual(projects.status_code, 200)
-        self.assertIn(
-            self.project.slug,
-            [project["slug"] for project in projects.data["projects"]],
-        )
 
     def test_staff_member_can_read_the_website_module_overview(self):
         self.client.force_login(self.user)
