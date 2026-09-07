@@ -30,7 +30,9 @@ from .views import (
     WebApplicationViewSet,
     AgreementViewSet,
     WorkExperienceViewSet,
+    FeedbackInvitationViewSet,
     ProjectFeedbackRequestView,
+    DeploymentSettingsView,
 )
 
 router = DefaultRouter()
@@ -38,6 +40,7 @@ router.register("portfolio", PortfolioProjectViewSet, basename="admin-portfolio"
 router.register("project-images", ProjectImageViewSet, basename="admin-project-images")
 router.register("project-features", ProjectFeatureViewSet, basename="admin-project-features")
 router.register("project-clients", ProjectClientViewSet, basename="admin-project-clients")
+router.register("feedback-invitations", FeedbackInvitationViewSet, basename="admin-feedback-invitations")
 router.register("mobile-applications", MobileApplicationViewSet, basename="admin-mobile-applications")
 router.register("desktop-applications", DesktopApplicationViewSet, basename="admin-desktop-applications")
 router.register("web-applications", WebApplicationViewSet, basename="admin-web-applications")
@@ -57,6 +60,7 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="admin-logout"),
     path("auth/me/", CurrentUserView.as_view(), name="admin-current-user"),
     path("dashboard/", DashboardView.as_view(), name="admin-dashboard"),
+    path("settings/", DeploymentSettingsView.as_view(), name="admin-settings"),
     path("accounts/", AdminAccountListView.as_view(), name="admin-accounts"),
     path("accounts/<int:pk>/", AdminAccountDetailView.as_view(), name="admin-account-detail"),
     path("activity/", ActivityListView.as_view(), name="admin-activity"),

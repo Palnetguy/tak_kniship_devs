@@ -12,7 +12,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "project", "created_at", "updated_at")
 from tak_devs_app.models import (
     Agreement, ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
-    Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
+    FeedbackInvitation, Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
     WebApplication, WorkExperience,
 )
 
@@ -153,7 +153,27 @@ class ProjectFeatureAdminSerializer(serializers.ModelSerializer):
 class ProjectClientAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectClient
-        fields = ("id", "project", "name", "location", "rating", "message", "profile_image")
+        fields = ("id", "project", "name", "location", "rating", "message", "profile_image", "is_published", "submitted_at", "updated_at")
+        read_only_fields = ("submitted_at", "updated_at")
+
+
+class FeedbackInvitationAdminSerializer(serializers.ModelSerializer):
+    project_title = serializers.CharField(source="project.title", read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeedbackInvitation
+        fields = (
+            "id", "project", "project_title", "recipient_name", "recipient_email",
+            "status", "delivery_mode", "provider_message_id", "last_error",
+            "sent_at", "expires_at", "submitted_at", "created_by_name", "created_at",
+        )
+        read_only_fields = fields
+
+    def get_created_by_name(self, invitation):
+        if not invitation.created_by:
+            return "Former administrator"
+        return invitation.created_by.get_full_name() or invitation.created_by.username
 
 
 class MobileApplicationAdminSerializer(serializers.ModelSerializer):

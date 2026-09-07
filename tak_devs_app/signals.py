@@ -137,7 +137,7 @@ From: {instance.name} ({instance.job_title})
 Comment: {instance.comment}
 
 You can view this testimonial in the admin panel:
-{settings.SITE_URL}/admin/tak_devs_app/testimonial/{instance.pk}/change/
+{settings.ADMIN_SITE_URL}/workspace/testimonials
         """
         
         html_message = f"""
@@ -168,7 +168,7 @@ You can view this testimonial in the admin panel:
             </div>
             
             <p>You can review this testimonial in your admin panel.</p>
-            <p><a href="{settings.SITE_URL}/admin/tak_devs_app/testimonial/{instance.pk}/change/" class="button">View in Admin</a></p>
+            <p><a href="{settings.ADMIN_SITE_URL}/workspace/testimonials" class="button">View in Admin</a></p>
         </div>
     </div>
 </body>
@@ -199,7 +199,7 @@ Rating: {instance.rating}/5
 Message: {instance.message}
 
 You can view this feedback in the admin panel:
-{settings.SITE_URL}/admin/tak_devs_app/projectclient/{instance.pk}/change/
+{settings.ADMIN_SITE_URL}/workspace/project-clients
         """
         
         html_message = f"""
@@ -236,7 +236,7 @@ You can view this feedback in the admin panel:
             </div>
             
             <p>You can view the complete feedback details in your admin panel.</p>
-            <p><a href="{settings.SITE_URL}/admin/tak_devs_app/projectclient/{instance.pk}/change/" class="button">View in Admin</a></p>
+            <p><a href="{settings.ADMIN_SITE_URL}/workspace/project-clients" class="button">View in Admin</a></p>
         </div>
     </div>
 </body>

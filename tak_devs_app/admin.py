@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from .models import (
     FAQ, Agreement, ContactInfo, ContactUsMessage, DesktopApplication,
     Gallery, MobileApplication, Project, TeamMember, TechStack,
-    Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient, ProjectImage
+    Testimonial, WebApplication, WorkExperience, ProjectFeature, ProjectClient, ProjectImage, FeedbackInvitation
 )
 from .views import send_feedback_request_email
 
@@ -122,8 +122,8 @@ class ProjectFeatureAdmin(admin.ModelAdmin):
 
 @admin.register(ProjectClient)
 class ProjectClientAdmin(admin.ModelAdmin):
-    list_display = ('project', 'name', 'location', 'rating', 'message_preview')
-    list_filter = ('rating', 'location')
+    list_display = ('project', 'name', 'location', 'rating', 'is_published', 'submitted_at', 'message_preview')
+    list_filter = ('is_published', 'rating', 'location')
     search_fields = ('name', 'location', 'message', 'project__title')
 
     def message_preview(self, obj):
@@ -247,3 +247,11 @@ class AgreementAdmin(admin.ModelAdmin):
 class TechStackAdmin(admin.ModelAdmin):
     list_display = ('language',)
     search_fields = ('language',)
+
+
+@admin.register(FeedbackInvitation)
+class FeedbackInvitationAdmin(admin.ModelAdmin):
+    list_display = ('project', 'recipient_name', 'recipient_email', 'status', 'sent_at', 'expires_at')
+    list_filter = ('status', 'delivery_mode')
+    search_fields = ('recipient_name', 'recipient_email', 'project__title')
+    readonly_fields = ('provider_message_id', 'delivery_mode', 'sent_at', 'expires_at', 'submitted_at', 'created_at')

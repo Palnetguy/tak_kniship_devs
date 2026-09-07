@@ -3,10 +3,12 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework.test import APIClient
 
 from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership
-from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, Project, ProjectImage
+from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, FeedbackInvitation, Project, ProjectImage
 from tak_devs_app.views import generate_client_feedback_link
 
 
@@ -234,6 +236,9 @@ class AdminPortalApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["delivery_mode"], "local-preview")
+        invitation = FeedbackInvitation.objects.get(project=project)
+        self.assertEqual(invitation.status, FeedbackInvitation.Status.DELIVERED)
+        self.assertEqual(invitation.delivery_mode, "local-preview")
 
     def test_client_can_submit_and_update_feedback_from_signed_link(self):
         project = Project.objects.create(
@@ -244,7 +249,14 @@ class AdminPortalApiTests(TestCase):
             date_published="2026-09-07",
             duration_of_development=2,
         )
-        token = generate_client_feedback_link(project)
+        invitation = FeedbackInvitation.objects.create(
+            project=project,
+            recipient_name="Test Client",
+            recipient_email="client@example.com",
+            expires_at=timezone.now() + timedelta(days=7),
+            status=FeedbackInvitation.Status.DELIVERED,
+        )
+        token = generate_client_feedback_link(project, invitation)
         url = reverse(
             "client_feedback_form",
             kwargs={"project_id": project.pk, "token": token},
@@ -257,6 +269,9 @@ class AdminPortalApiTests(TestCase):
         )
         self.assertEqual(first.status_code, 200)
         self.assertEqual(project.client.message, "Excellent work.")
+        self.assertFalse(project.client.is_published)
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, FeedbackInvitation.Status.SUBMITTED)
 
         updated = self.client.post(
             url,
@@ -265,6 +280,16 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(updated.status_code, 200)
         project.client.refresh_from_db()
         self.assertEqual(project.client.message, "Updated feedback.")
+
+    def test_platform_owner_can_review_safe_deployment_readiness(self):
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
+        self.client.force_login(self.user)
+        response = self.client.get("/api/admin/v1/settings/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("resend_configured", response.data["checks"])
+        self.assertNotIn("resend_api_key", response.data)
 
     def test_platform_owner_can_create_and_update_an_admin_account(self):
         self.user.is_superuser = True
