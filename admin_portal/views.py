@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -416,6 +417,31 @@ class TeamMemberViewSet(AuditedModelViewSet):
     queryset = TeamMember.objects.all().order_by("order", "name")
     serializer_class = TeamMemberAdminSerializer
     audit_namespace = "admin.team"
+
+    @action(detail=False, methods=["post"])
+    def reorder(self, request):
+        ordered_ids = request.data.get("ordered_ids")
+        if not isinstance(ordered_ids, list) or not ordered_ids:
+            raise ValidationError({"ordered_ids": "Provide the team member IDs in display order."})
+        try:
+            ordered_ids = [int(member_id) for member_id in ordered_ids]
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({"ordered_ids": "Every team member ID must be a number."}) from exc
+        if len(ordered_ids) != len(set(ordered_ids)):
+            raise ValidationError({"ordered_ids": "Team member IDs cannot be repeated."})
+
+        members = list(TeamMember.objects.filter(pk__in=ordered_ids))
+        if len(members) != len(ordered_ids):
+            raise ValidationError({"ordered_ids": "One or more team members were not found."})
+        by_id = {member.pk: member for member in members}
+        with transaction.atomic():
+            for position, member_id in enumerate(ordered_ids, start=1):
+                by_id[member_id].order = position
+            TeamMember.objects.bulk_update(members, ["order"])
+            self._record("reordered", by_id[ordered_ids[0]])
+
+        ordered_members = [by_id[member_id] for member_id in ordered_ids]
+        return Response(TeamMemberAdminSerializer(ordered_members, many=True, context={"request": request}).data)
 
 
 class TestimonialViewSet(AuditedModelViewSet):

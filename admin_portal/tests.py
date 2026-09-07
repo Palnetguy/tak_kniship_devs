@@ -8,7 +8,7 @@ from datetime import timedelta
 from rest_framework.test import APIClient
 
 from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership
-from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, FeedbackInvitation, Project, ProjectImage
+from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, FeedbackInvitation, Project, ProjectImage, TeamMember
 from tak_devs_app.views import generate_client_feedback_link
 
 
@@ -260,6 +260,25 @@ class AdminPortalApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(ProjectImage.objects.filter(project=project, image_type="background").exists())
+
+    def test_staff_member_can_reorder_team_members(self):
+        first = TeamMember.objects.create(name="First", role="Designer", order=1)
+        second = TeamMember.objects.create(name="Second", role="Engineer", order=2)
+        third = TeamMember.objects.create(name="Third", role="Director", order=3)
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            "/api/admin/v1/team/reorder/",
+            {"ordered_ids": [third.pk, first.pk, second.pk]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([member["id"] for member in response.data], [third.pk, first.pk, second.pk])
+        self.assertEqual(
+            list(TeamMember.objects.order_by("order").values_list("id", flat=True)),
+            [third.pk, first.pk, second.pk],
+        )
 
     def test_feedback_request_is_prepared_in_local_development(self):
         project = Project.objects.create(
