@@ -118,11 +118,15 @@ class LoginView(APIView):
         return Response({"user": AdminUserSerializer(user).data})
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class LogoutView(APIView):
-    permission_classes = (IsTAKAdmin,)
+    """Clear the browser session even when it has expired or lost access."""
+
+    permission_classes = (AllowAny,)
 
     def post(self, request):
-        record_event(actor=request.user, action="admin.auth.signed_out")
+        if request.user.is_authenticated:
+            record_event(actor=request.user, action="admin.auth.signed_out")
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

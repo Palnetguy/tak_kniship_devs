@@ -95,6 +95,39 @@ class AdminPortalApiTests(TestCase):
         self.assertEqual(response.data["user"]["username"], "tak-admin")
         self.assertTrue(AuditEvent.objects.filter(action="admin.auth.signed_in").exists())
 
+    def test_logout_clears_session_and_allows_switching_accounts(self):
+        owner = get_user_model().objects.create_superuser(
+            username="platform-owner",
+            password="another-safe-test-password",
+            email="owner@example.com",
+        )
+        self.client.get("/api/admin/v1/auth/csrf/")
+        login_response = self.client.post(
+            "/api/admin/v1/auth/login/",
+            {"username": self.user.username, "password": "safe-test-password"},
+            format="json",
+            HTTP_X_CSRFTOKEN=self.client.cookies["csrftoken"].value,
+        )
+        self.assertEqual(login_response.status_code, 200)
+
+        logout_response = self.client.post(
+            "/api/admin/v1/auth/logout/",
+            HTTP_X_CSRFTOKEN=self.client.cookies["csrftoken"].value,
+        )
+        self.assertEqual(logout_response.status_code, 204)
+        self.assertEqual(self.client.get("/api/admin/v1/auth/me/").status_code, 403)
+
+        self.client.get("/api/admin/v1/auth/csrf/")
+        owner_login = self.client.post(
+            "/api/admin/v1/auth/login/",
+            {"username": owner.username, "password": "another-safe-test-password"},
+            format="json",
+            HTTP_X_CSRFTOKEN=self.client.cookies["csrftoken"].value,
+        )
+        self.assertEqual(owner_login.status_code, 200)
+        self.assertTrue(owner_login.data["user"]["is_superuser"])
+        self.assertEqual(self.client.get("/api/admin/v1/dashboard/").status_code, 200)
+
     def test_login_attempts_are_rate_limited(self):
         self.client.get("/api/admin/v1/auth/csrf/")
         csrf_token = self.client.cookies["csrftoken"].value
