@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from .models import AuditEvent, ManagedProject, ProjectMembership
-from tak_devs_app.models import ContactUsMessage, FAQ
+from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership
+from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, Project, ProjectImage
 
 
 class AdminPortalApiTests(TestCase):
@@ -141,6 +142,96 @@ class AdminPortalApiTests(TestCase):
         message.refresh_from_db()
         self.assertEqual(message.handled_by, self.user)
         self.assertIsNotNone(message.handled_at)
+
+    def test_staff_member_can_reply_to_a_contact_message_in_local_preview(self):
+        message = ContactUsMessage.objects.create(
+            name="A client",
+            subject="Website enquiry",
+            email="client@example.com",
+            message="Can you help?",
+            phone_number="0700000000",
+        )
+        self.client.force_login(self.user)
+        with self.settings(DEBUG=True, RESEND_API_KEY=""):
+            response = self.client.post(
+                f"/api/admin/v1/messages/{message.id}/reply/",
+                {"subject": "Re: Website enquiry", "body": "Yes, we would be glad to help."},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        reply = ContactMessageReply.objects.get(contact_message=message)
+        self.assertEqual(reply.delivery_mode, "local-preview")
+        message.refresh_from_db()
+        self.assertIsNotNone(message.handled_at)
+
+    def test_staff_member_can_manage_agreements(self):
+        project = Project.objects.create(
+            title="Test project",
+            slug="test-project",
+            project_category="Web Application",
+            about_project="Test",
+            date_published="2026-09-07",
+            duration_of_development=2,
+        )
+        self.client.force_login(self.user)
+        response = self.client.post(
+            "/api/admin/v1/agreements/",
+            {
+                "project": project.pk,
+                "title": "Privacy policy",
+                "agreement_type": "Policy",
+                "description": "Test policy",
+                "date_published": "2026-09-07",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Agreement.objects.filter(project=project).exists())
+
+    def test_staff_member_can_upload_a_project_cover_image(self):
+        project = Project.objects.create(
+            title="Image project",
+            slug="image-project",
+            project_category="Web Application",
+            about_project="Test",
+            date_published="2026-09-07",
+            duration_of_development=2,
+        )
+        image = SimpleUploadedFile(
+            "cover.gif",
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+            content_type="image/gif",
+        )
+        self.client.force_login(self.user)
+        response = self.client.post(
+            "/api/admin/v1/project-images/",
+            {"project": project.pk, "image": image, "image_type": "background", "order": 0},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(ProjectImage.objects.filter(project=project, image_type="background").exists())
+
+    def test_feedback_request_is_prepared_in_local_development(self):
+        project = Project.objects.create(
+            title="Feedback project",
+            slug="feedback-project",
+            project_category="Web Application",
+            about_project="Test",
+            date_published="2026-09-07",
+            duration_of_development=2,
+        )
+        self.client.force_login(self.user)
+        with self.settings(DEBUG=True, RESEND_API_KEY=""):
+            response = self.client.post(
+                f"/api/admin/v1/portfolio/{project.pk}/request-feedback/",
+                {"recipient_name": "Test Client", "recipient_email": "client@example.com"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["delivery_mode"], "local-preview")
 
     def test_platform_owner_can_create_and_update_an_admin_account(self):
         self.user.is_superuser = True

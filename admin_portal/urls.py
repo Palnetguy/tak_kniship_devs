@@ -28,6 +28,9 @@ from .views import (
     MobileApplicationViewSet,
     DesktopApplicationViewSet,
     WebApplicationViewSet,
+    AgreementViewSet,
+    WorkExperienceViewSet,
+    ProjectFeedbackRequestView,
 )
 
 router = DefaultRouter()
@@ -38,6 +41,8 @@ router.register("project-clients", ProjectClientViewSet, basename="admin-project
 router.register("mobile-applications", MobileApplicationViewSet, basename="admin-mobile-applications")
 router.register("desktop-applications", DesktopApplicationViewSet, basename="admin-desktop-applications")
 router.register("web-applications", WebApplicationViewSet, basename="admin-web-applications")
+router.register("agreements", AgreementViewSet, basename="admin-agreements")
+router.register("work-experience", WorkExperienceViewSet, basename="admin-work-experience")
 router.register("team", TeamMemberViewSet, basename="admin-team")
 router.register("testimonials", TestimonialViewSet, basename="admin-testimonials")
 router.register("faqs", FAQViewSet, basename="admin-faqs")
@@ -59,5 +64,6 @@ urlpatterns = [
     path("public/website-content/<slug:key>/", PublicWebsiteContentView.as_view(), name="public-website-content"),
     path("projects/", ProjectListView.as_view(), name="admin-projects"),
     path("projects/<slug:slug>/", ProjectDetailView.as_view(), name="admin-project-detail"),
+    path("portfolio/<int:pk>/request-feedback/", ProjectFeedbackRequestView.as_view(), name="admin-project-feedback-request"),
     path("", include(router.urls)),
 ]

@@ -106,3 +106,23 @@ class WebsiteContent(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["project", "key"], name="unique_website_content_key")]
         ordering = ["key"]
+
+
+class ContactMessageReply(models.Model):
+    contact_message = models.ForeignKey(
+        "tak_devs_app.ContactUsMessage", on_delete=models.CASCADE, related_name="replies"
+    )
+    sent_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="contact_message_replies",
+    )
+    subject = models.CharField(max_length=255)
+    body = models.TextField()
+    provider_message_id = models.CharField(max_length=160, blank=True)
+    delivery_mode = models.CharField(max_length=32, default="resend")
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sent_at"]

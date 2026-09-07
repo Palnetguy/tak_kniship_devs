@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import AuditEvent, ManagedProject, ProjectMembership, WebsiteContent
+from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership, WebsiteContent
 
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
@@ -11,9 +11,9 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         fields = ("id", "project", "key", "value", "is_published", "created_at", "updated_at")
         read_only_fields = ("id", "project", "created_at", "updated_at")
 from tak_devs_app.models import (
-    ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
+    Agreement, ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
     Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
-    WebApplication,
+    WebApplication, WorkExperience,
 )
 
 
@@ -206,13 +206,39 @@ class ContactInfoAdminSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ContactMessageReplySerializer(serializers.ModelSerializer):
+    sent_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ContactMessageReply
+        fields = ("id", "subject", "body", "sent_by_name", "delivery_mode", "sent_at")
+
+    def get_sent_by_name(self, reply):
+        if not reply.sent_by:
+            return "Former administrator"
+        return reply.sent_by.get_full_name() or reply.sent_by.username
+
+
 class ContactMessageAdminSerializer(serializers.ModelSerializer):
     handled_by_name = serializers.CharField(source="handled_by.get_full_name", read_only=True)
+    replies = ContactMessageReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = ContactUsMessage
         fields = (
             "id", "name", "subject", "email", "message", "phone_number", "date_sent",
-            "handled_at", "handled_by", "handled_by_name",
+            "handled_at", "handled_by", "handled_by_name", "replies",
         )
         read_only_fields = ("date_sent", "handled_by", "handled_by_name")
+
+
+class AgreementAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Agreement
+        fields = ("id", "project", "title", "agreement_type", "description", "date_published")
+
+
+class WorkExperienceAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkExperience
+        fields = "__all__"
