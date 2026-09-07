@@ -92,7 +92,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     web_applications = WebApplicationSerializer(many=True, read_only=True)
     tech_stack = TechStackSerializer(many=True, read_only=True)
     features = ProjectFeatureSerializer(many=True, read_only=True)
-    client = ProjectClientSerializer(read_only=True)
+    client = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
 
     class Meta:
@@ -131,6 +131,15 @@ class ProjectSerializer(serializers.ModelSerializer):
             'about': images.get('about'),
             'challenge': images.get('challenge'),
         }
+
+    def get_client(self, obj):
+        try:
+            client = obj.client
+        except ProjectClient.DoesNotExist:
+            return None
+        if not client.is_published:
+            return None
+        return ProjectClientSerializer(client, context=self.context).data
 
 class AgreementSerializer(serializers.ModelSerializer):
     class Meta:

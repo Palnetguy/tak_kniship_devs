@@ -246,7 +246,46 @@ class ProjectClient(models.Model):
     message = models.TextField()
     profile_image = models.ImageField(upload_to='client_images/', null=True, blank=True)  # New optional field
     project = models.OneToOneField('Project', on_delete=models.CASCADE, related_name='client')
+    is_published = models.BooleanField(default=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.project.title} - {self.name}"
+
+
+class FeedbackInvitation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        DELIVERED = 'delivered', 'Delivered'
+        FAILED = 'failed', 'Failed'
+        SUBMITTED = 'submitted', 'Submitted'
+
+    project = models.ForeignKey(
+        'Project', on_delete=models.CASCADE, related_name='feedback_invitations'
+    )
+    recipient_name = models.CharField(max_length=100)
+    recipient_email = models.EmailField()
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    provider_message_id = models.CharField(max_length=255, blank=True)
+    delivery_mode = models.CharField(max_length=32, blank=True)
+    last_error = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='feedback_invitations',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+        indexes = [models.Index(fields=('status', 'created_at'), name='tak_devs_ap_status_66bf28_idx')]
+
+    def __str__(self):
+        return f"{self.project.title} - {self.recipient_email}"
 

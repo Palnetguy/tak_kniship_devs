@@ -1,11 +1,21 @@
+import requests
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
+from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -14,21 +24,51 @@ from rest_framework import viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.throttling import ScopedRateThrottle
 
-from .models import AuditEvent, ManagedProject, WebsiteContent
+from .models import AuditEvent, ContactMessageReply, ManagedProject, WebsiteContent
 from .permissions import HasTAKWebsiteAccess, IsPlatformOwner, IsTAKAdmin
 from .serializers import (
     AdminAccountWriteSerializer, AdminUserSerializer, AuditEventSerializer, ContactInfoAdminSerializer,
     ContactMessageAdminSerializer, FAQAdminSerializer, GalleryAdminSerializer,
     ManagedProjectSerializer, PortfolioProjectSerializer, TeamMemberAdminSerializer,
     TestimonialAdminSerializer, ProjectImageAdminSerializer, ProjectFeatureAdminSerializer,
-    ProjectClientAdminSerializer, MobileApplicationAdminSerializer, DesktopApplicationAdminSerializer,
-    WebApplicationAdminSerializer,
+    ProjectClientAdminSerializer, FeedbackInvitationAdminSerializer, MobileApplicationAdminSerializer, DesktopApplicationAdminSerializer,
+    AgreementAdminSerializer, WebApplicationAdminSerializer, WorkExperienceAdminSerializer,
     WebsiteContentSerializer,
 )
 from tak_devs_app.models import (
-    ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication, Project,
-    ProjectClient, ProjectFeature, ProjectImage, TeamMember, Testimonial, WebApplication,
+    Agreement, ContactInfo, ContactUsMessage, DesktopApplication, FAQ, FeedbackInvitation, Gallery, MobileApplication, Project,
+    ProjectClient, ProjectFeature, ProjectImage, TeamMember, Testimonial, WebApplication, WorkExperience,
 )
+from tak_devs_app.views import generate_client_feedback_link
+
+
+def deliver_outbound_email(*, recipient, subject, body, html):
+    """Send through Resend in production and safely preview in local development."""
+    if settings.DEBUG and not settings.RESEND_API_KEY:
+        return {"id": "local-preview", "mode": "local-preview"}
+    if not settings.RESEND_API_KEY:
+        raise ValidationError({"detail": "RESEND_API_KEY is not configured."})
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": [recipient],
+                "subject": subject,
+                "text": body,
+                "html": html,
+                "reply_to": "info@takkinship.com",
+            },
+            timeout=settings.EMAIL_TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise ValidationError({"detail": "The email provider could not deliver this message."}) from exc
+    return {"id": response.json().get("id", ""), "mode": "resend"}
 
 
 def record_event(*, actor, action, project=None, target_type="", target_id="", metadata=None):
@@ -140,6 +180,26 @@ class WebsiteOverviewView(APIView):
                 "activity": AuditEventSerializer(activity[:8], many=True).data,
             }
         )
+
+
+class DeploymentSettingsView(APIView):
+    """Report operational readiness without exposing secret values."""
+
+    permission_classes = (IsTAKAdmin,)
+
+    def get(self, request):
+        return Response({
+            "environment": "development" if settings.DEBUG else "production",
+            "public_site_url": settings.PUBLIC_SITE_URL,
+            "admin_site_url": settings.ADMIN_SITE_URL,
+            "backend_public_url": settings.BACKEND_PUBLIC_URL,
+            "checks": {
+                "database": "sqlite" if settings.USE_SQLITE else "postgresql",
+                "resend_configured": bool(settings.RESEND_API_KEY),
+                "admin_recipients_configured": bool(settings.ADMIN_EMAILS),
+                "media_storage": "local" if settings.USE_SQLITE else "s3",
+            },
+        })
 
 
 class PublicWebsiteContentView(APIView):
@@ -301,6 +361,17 @@ class ProjectClientViewSet(AuditedModelViewSet):
     audit_namespace = "admin.project_clients"
 
 
+class FeedbackInvitationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
+    queryset = FeedbackInvitation.objects.select_related("project", "created_by")
+    serializer_class = FeedbackInvitationAdminSerializer
+
+    @action(detail=True, methods=("post",))
+    def resend(self, request, pk=None):
+        invitation = self.get_object()
+        return _deliver_feedback_invitation(request, invitation.project, invitation)
+
+
 class MobileApplicationViewSet(AuditedModelViewSet):
     permission_classes = (HasTAKWebsiteAccess,)
     queryset = MobileApplication.objects.select_related("project").order_by("project_id", "name")
@@ -320,6 +391,20 @@ class WebApplicationViewSet(AuditedModelViewSet):
     queryset = WebApplication.objects.select_related("project").order_by("project_id", "name")
     serializer_class = WebApplicationAdminSerializer
     audit_namespace = "admin.web_applications"
+
+
+class AgreementViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
+    queryset = Agreement.objects.select_related("project").order_by("project_id", "agreement_type")
+    serializer_class = AgreementAdminSerializer
+    audit_namespace = "admin.agreements"
+
+
+class WorkExperienceViewSet(AuditedModelViewSet):
+    permission_classes = (HasTAKWebsiteAccess,)
+    queryset = WorkExperience.objects.all().order_by("id")
+    serializer_class = WorkExperienceAdminSerializer
+    audit_namespace = "admin.work_experience"
 
 
 class TeamMemberViewSet(AuditedModelViewSet):
@@ -366,10 +451,46 @@ class ContactInfoViewSet(AuditedModelViewSet):
 
 class ContactMessageViewSet(AuditedModelViewSet):
     permission_classes = (HasTAKWebsiteAccess,)
-    queryset = ContactUsMessage.objects.select_related("handled_by").order_by("-date_sent")
+    queryset = ContactUsMessage.objects.select_related("handled_by").prefetch_related(
+        "replies__sent_by"
+    ).order_by("-date_sent")
     serializer_class = ContactMessageAdminSerializer
     audit_namespace = "admin.messages"
-    http_method_names = ("get", "patch", "head", "options")
+    http_method_names = ("get", "patch", "post", "head", "options")
+
+    @action(detail=True, methods=("post",))
+    def reply(self, request, pk=None):
+        message = self.get_object()
+        subject = str(request.data.get("subject", "")).strip()
+        body = str(request.data.get("body", "")).strip()
+        if not subject or not body:
+            raise ValidationError({"detail": "Enter both a reply subject and message."})
+        if len(subject) > 255 or len(body) > 10000:
+            raise ValidationError({"detail": "The reply is longer than the allowed limit."})
+        delivery = deliver_outbound_email(
+            recipient=message.email,
+            subject=subject,
+            body=body,
+            html=(
+                '<div style="font-family:Arial,sans-serif;line-height:1.65;color:#152019">'
+                f'<p>{escape(body).replace(chr(10), "<br>")}</p>'
+                '<p style="margin-top:32px;color:#4a5b51">TAK Kinship Technologies Limited</p>'
+                '</div>'
+            ),
+        )
+        ContactMessageReply.objects.create(
+            contact_message=message,
+            sent_by=request.user,
+            subject=subject,
+            body=body,
+            provider_message_id=delivery["id"],
+            delivery_mode=delivery["mode"],
+        )
+        message.handled_at = timezone.now()
+        message.handled_by = request.user
+        message.save(update_fields=("handled_at", "handled_by"))
+        self._record("replied", message)
+        return Response(ContactMessageAdminSerializer(message).data)
 
     def perform_update(self, serializer):
         if "handled_at" in serializer.validated_data:
@@ -381,3 +502,72 @@ class ContactMessageViewSet(AuditedModelViewSet):
         else:
             instance = serializer.save()
         self._record("updated", instance)
+
+
+class ProjectFeedbackRequestView(APIView):
+    permission_classes = (HasTAKWebsiteAccess,)
+
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        recipient_email = str(request.data.get("recipient_email", "")).strip()
+        recipient_name = str(request.data.get("recipient_name", "")).strip()
+        if not recipient_email or not recipient_name:
+            raise ValidationError({"detail": "Enter the client's name and email address."})
+        try:
+            validate_email(recipient_email)
+        except DjangoValidationError as exc:
+            raise ValidationError({"recipient_email": "Enter a valid email address."}) from exc
+        invitation = FeedbackInvitation.objects.create(
+            project=project,
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            expires_at=timezone.now() + timedelta(days=7),
+            created_by=request.user,
+        )
+        return _deliver_feedback_invitation(request, project, invitation)
+
+
+def _deliver_feedback_invitation(request, project, invitation):
+    invitation.expires_at = timezone.now() + timedelta(days=7)
+    invitation.status = FeedbackInvitation.Status.PENDING
+    invitation.last_error = ""
+    invitation.save(update_fields=("expires_at", "status", "last_error"))
+    token = generate_client_feedback_link(project, invitation)
+    feedback_path = reverse("client_feedback_form", kwargs={"project_id": project.pk, "token": token})
+    feedback_url = request.build_absolute_uri(feedback_path)
+    subject = f"We'd like your feedback on {project.title}"
+    body = f"Hello {invitation.recipient_name},\n\nPlease share your feedback about {project.title}: {feedback_url}"
+    try:
+        delivery = deliver_outbound_email(
+            recipient=invitation.recipient_email,
+            subject=subject,
+            body=body,
+            html=render_to_string(
+                "email/feedback_request_email.html",
+                {"project": project, "recipient_name": invitation.recipient_name, "feedback_url": feedback_url},
+            ),
+        )
+    except ValidationError as exc:
+        invitation.status = FeedbackInvitation.Status.FAILED
+        invitation.last_error = str(exc.detail)
+        invitation.save(update_fields=("status", "last_error"))
+        raise
+    invitation.status = FeedbackInvitation.Status.DELIVERED
+    invitation.delivery_mode = delivery["mode"]
+    invitation.provider_message_id = delivery["id"]
+    invitation.sent_at = timezone.now()
+    invitation.save(update_fields=("status", "delivery_mode", "provider_message_id", "sent_at"))
+    website_project = ManagedProject.objects.filter(slug="tak-kinship").first()
+    record_event(
+        actor=request.user,
+        project=website_project,
+        action="admin.portfolio.feedback_requested",
+        target_type=project._meta.label_lower,
+        target_id=project.pk,
+        metadata={"recipient": invitation.recipient_email, "delivery_mode": delivery["mode"], "invitation_id": invitation.pk},
+    )
+    return Response({
+        "detail": "Feedback request sent.",
+        "delivery_mode": delivery["mode"],
+        "invitation": FeedbackInvitationAdminSerializer(invitation).data,
+    })

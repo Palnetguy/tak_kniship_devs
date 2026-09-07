@@ -1,10 +1,11 @@
 # views.py
+from datetime import timedelta
 
 from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics
 
 from tak_web.settings import EMAIL_HOST_USER
-from .models import Agreement, ContactInfo, Project, ProjectClient, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
+from .models import Agreement, ContactInfo, FeedbackInvitation, Project, ProjectClient, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
 from .serializers import AgreementSerializer, ContactInfoSeriliazer, ProjectSerializer, TeamMemberSerializer, TestimonialSerializer, GallerySerializer, FAQSerializer, ContactUsMessageSerializer, WorkExperienceSerializer, MobileApplicationSerializer, DesktopApplicationSerializer, WebApplicationSerializer
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -20,8 +21,10 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from .forms import TestimonialForm, ProjectClientFeedbackForm
 from django.conf import settings
+from django.utils import timezone
 
 from django.http import HttpResponse
+import requests
 
 
 class LocalOrHasAPIKey(BasePermission):
@@ -202,19 +205,37 @@ def client_feedback_form(request, project_id, token=None):
     signer = TimestampSigner()
     try:
         value = signer.unsign(token, max_age=60*60*24*7)  # Valid for 7 days
-        if str(project_id) != value:
-            messages.error(request, "Invalid token. Please request a new feedback link.")
-            return redirect('home')
+        token_parts = value.split(':')
+        if str(project_id) != token_parts[0]:
+            return HttpResponse("This feedback link is invalid.", status=400)
     except (BadSignature, SignatureExpired):
-        messages.error(request, "This feedback link has expired or is invalid.")
-        return redirect('home')
+        return HttpResponse("This feedback link has expired or is invalid.", status=410)
+
+    invitation = None
+    if len(token_parts) == 2:
+        invitation = FeedbackInvitation.objects.filter(
+            pk=token_parts[1], project=project
+        ).first()
+        if not invitation or invitation.expires_at < timezone.now():
+            return HttpResponse("This feedback link has expired or is invalid.", status=410)
     
     if request.method == 'POST':
-        form = ProjectClientFeedbackForm(request.POST, request.FILES)
+        existing_client = ProjectClient.objects.filter(project=project).first()
+        form = ProjectClientFeedbackForm(
+            request.POST,
+            request.FILES,
+            instance=existing_client,
+        )
         if form.is_valid():
             client = form.save(commit=False)
             client.project = project
+            client.is_published = False
+            client.submitted_at = timezone.now()
             client.save()
+            if invitation:
+                invitation.status = FeedbackInvitation.Status.SUBMITTED
+                invitation.submitted_at = timezone.now()
+                invitation.save(update_fields=("status", "submitted_at"))
             form_submitted = True
     else:
         # Check if client feedback already exists
@@ -231,17 +252,26 @@ def client_feedback_form(request, project_id, token=None):
         'form_submitted': form_submitted
     })
 
-def generate_client_feedback_link(project):
+def generate_client_feedback_link(project, invitation=None):
     """Generate a secure link for client feedback"""
     signer = TimestampSigner()
-    token = signer.sign(str(project.id))
+    value = str(project.id)
+    if invitation is not None:
+        value = f"{project.id}:{invitation.id}"
+    token = signer.sign(value)
     return token
 
 def send_feedback_request_email(project, recipient_email, recipient_name):
     """Send an email with the client feedback link"""
-    token = generate_client_feedback_link(project)
+    invitation = FeedbackInvitation.objects.create(
+        project=project,
+        recipient_email=recipient_email,
+        recipient_name=recipient_name,
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+    token = generate_client_feedback_link(project, invitation)
     feedback_url = reverse('client_feedback_form', kwargs={'project_id': project.id, 'token': token})
-    absolute_url = settings.SITE_URL + feedback_url
+    absolute_url = settings.BACKEND_PUBLIC_URL + feedback_url
     
     subject = f"We'd like your feedback on {project.title}"
     html_message = render_to_string('email/feedback_request_email.html', {
@@ -250,12 +280,43 @@ def send_feedback_request_email(project, recipient_email, recipient_name):
         'feedback_url': absolute_url
     })
     
-    send_mail(
-        subject,
-        f"Please share your feedback about {project.title} at: {absolute_url}",
-        settings.EMAIL_HOST_USER,
-        [recipient_email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+    if settings.DEBUG and not settings.RESEND_API_KEY:
+        invitation.status = FeedbackInvitation.Status.DELIVERED
+        invitation.delivery_mode = "local-preview"
+        invitation.sent_at = timezone.now()
+        invitation.save(update_fields=("status", "delivery_mode", "sent_at"))
+        return True
+    if not settings.RESEND_API_KEY:
+        invitation.status = FeedbackInvitation.Status.FAILED
+        invitation.last_error = "RESEND_API_KEY is not configured."
+        invitation.save(update_fields=("status", "last_error"))
+        return False
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": [recipient_email],
+                "subject": subject,
+                "text": f"Please share your feedback about {project.title} at: {absolute_url}",
+                "html": html_message,
+                "reply_to": "info@takkinship.com",
+            },
+            timeout=settings.EMAIL_TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        invitation.status = FeedbackInvitation.Status.FAILED
+        invitation.last_error = str(exc)[:1000]
+        invitation.save(update_fields=("status", "last_error"))
+        return False
+    invitation.status = FeedbackInvitation.Status.DELIVERED
+    invitation.provider_message_id = response.json().get("id", "")
+    invitation.delivery_mode = "resend"
+    invitation.sent_at = timezone.now()
+    invitation.save(update_fields=("status", "provider_message_id", "delivery_mode", "sent_at"))
     return True

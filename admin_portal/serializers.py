@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import AuditEvent, ManagedProject, ProjectMembership, WebsiteContent
+from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership, WebsiteContent
 
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
@@ -11,9 +11,9 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         fields = ("id", "project", "key", "value", "is_published", "created_at", "updated_at")
         read_only_fields = ("id", "project", "created_at", "updated_at")
 from tak_devs_app.models import (
-    ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
-    Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
-    WebApplication,
+    Agreement, ContactInfo, ContactUsMessage, DesktopApplication, FAQ, Gallery, MobileApplication,
+    FeedbackInvitation, Project, ProjectClient, ProjectFeature, ProjectImage, TeamMember, TechStack, Testimonial,
+    WebApplication, WorkExperience,
 )
 
 
@@ -153,7 +153,27 @@ class ProjectFeatureAdminSerializer(serializers.ModelSerializer):
 class ProjectClientAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectClient
-        fields = ("id", "project", "name", "location", "rating", "message", "profile_image")
+        fields = ("id", "project", "name", "location", "rating", "message", "profile_image", "is_published", "submitted_at", "updated_at")
+        read_only_fields = ("submitted_at", "updated_at")
+
+
+class FeedbackInvitationAdminSerializer(serializers.ModelSerializer):
+    project_title = serializers.CharField(source="project.title", read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeedbackInvitation
+        fields = (
+            "id", "project", "project_title", "recipient_name", "recipient_email",
+            "status", "delivery_mode", "provider_message_id", "last_error",
+            "sent_at", "expires_at", "submitted_at", "created_by_name", "created_at",
+        )
+        read_only_fields = fields
+
+    def get_created_by_name(self, invitation):
+        if not invitation.created_by:
+            return "Former administrator"
+        return invitation.created_by.get_full_name() or invitation.created_by.username
 
 
 class MobileApplicationAdminSerializer(serializers.ModelSerializer):
@@ -206,13 +226,39 @@ class ContactInfoAdminSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ContactMessageReplySerializer(serializers.ModelSerializer):
+    sent_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ContactMessageReply
+        fields = ("id", "subject", "body", "sent_by_name", "delivery_mode", "sent_at")
+
+    def get_sent_by_name(self, reply):
+        if not reply.sent_by:
+            return "Former administrator"
+        return reply.sent_by.get_full_name() or reply.sent_by.username
+
+
 class ContactMessageAdminSerializer(serializers.ModelSerializer):
     handled_by_name = serializers.CharField(source="handled_by.get_full_name", read_only=True)
+    replies = ContactMessageReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = ContactUsMessage
         fields = (
             "id", "name", "subject", "email", "message", "phone_number", "date_sent",
-            "handled_at", "handled_by", "handled_by_name",
+            "handled_at", "handled_by", "handled_by_name", "replies",
         )
         read_only_fields = ("date_sent", "handled_by", "handled_by_name")
+
+
+class AgreementAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Agreement
+        fields = ("id", "project", "title", "agreement_type", "description", "date_published")
+
+
+class WorkExperienceAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkExperience
+        fields = "__all__"
