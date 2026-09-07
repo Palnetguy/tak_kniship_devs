@@ -22,6 +22,7 @@ from .forms import TestimonialForm, ProjectClientFeedbackForm
 from django.conf import settings
 
 from django.http import HttpResponse
+import requests
 
 
 class LocalOrHasAPIKey(BasePermission):
@@ -210,7 +211,12 @@ def client_feedback_form(request, project_id, token=None):
         return redirect('home')
     
     if request.method == 'POST':
-        form = ProjectClientFeedbackForm(request.POST, request.FILES)
+        existing_client = ProjectClient.objects.filter(project=project).first()
+        form = ProjectClientFeedbackForm(
+            request.POST,
+            request.FILES,
+            instance=existing_client,
+        )
         if form.is_valid():
             client = form.save(commit=False)
             client.project = project
@@ -241,7 +247,7 @@ def send_feedback_request_email(project, recipient_email, recipient_name):
     """Send an email with the client feedback link"""
     token = generate_client_feedback_link(project)
     feedback_url = reverse('client_feedback_form', kwargs={'project_id': project.id, 'token': token})
-    absolute_url = settings.SITE_URL + feedback_url
+    absolute_url = settings.ADMIN_SITE_URL + feedback_url
     
     subject = f"We'd like your feedback on {project.title}"
     html_message = render_to_string('email/feedback_request_email.html', {
@@ -250,12 +256,28 @@ def send_feedback_request_email(project, recipient_email, recipient_name):
         'feedback_url': absolute_url
     })
     
-    send_mail(
-        subject,
-        f"Please share your feedback about {project.title} at: {absolute_url}",
-        settings.EMAIL_HOST_USER,
-        [recipient_email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+    if settings.DEBUG and not settings.RESEND_API_KEY:
+        return True
+    if not settings.RESEND_API_KEY:
+        return False
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": [recipient_email],
+                "subject": subject,
+                "text": f"Please share your feedback about {project.title} at: {absolute_url}",
+                "html": html_message,
+                "reply_to": "info@takkinship.com",
+            },
+            timeout=settings.EMAIL_TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return False
     return True

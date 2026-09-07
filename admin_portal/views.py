@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape
+from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -493,7 +494,14 @@ class ProjectFeedbackRequestView(APIView):
             recipient=recipient_email,
             subject=subject,
             body=body,
-            html=f"<p>Hello {escape(recipient_name)},</p><p>Please share your feedback about <strong>{escape(project.title)}</strong>.</p><p><a href=\"{escape(feedback_url)}\">Open feedback form</a></p>",
+            html=render_to_string(
+                "email/feedback_request_email.html",
+                {
+                    "project": project,
+                    "recipient_name": recipient_name,
+                    "feedback_url": feedback_url,
+                },
+            ),
         )
         website_project = ManagedProject.objects.filter(slug="tak-kinship").first()
         record_event(

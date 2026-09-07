@@ -2,10 +2,12 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
 from rest_framework.test import APIClient
 
 from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership
 from tak_devs_app.models import Agreement, ContactUsMessage, FAQ, Project, ProjectImage
+from tak_devs_app.views import generate_client_feedback_link
 
 
 class AdminPortalApiTests(TestCase):
@@ -232,6 +234,37 @@ class AdminPortalApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["delivery_mode"], "local-preview")
+
+    def test_client_can_submit_and_update_feedback_from_signed_link(self):
+        project = Project.objects.create(
+            title="Feedback form project",
+            slug="feedback-form-project",
+            project_category="Web Application",
+            about_project="Test",
+            date_published="2026-09-07",
+            duration_of_development=2,
+        )
+        token = generate_client_feedback_link(project)
+        url = reverse(
+            "client_feedback_form",
+            kwargs={"project_id": project.pk, "token": token},
+        )
+
+        self.assertEqual(self.client.get(url).status_code, 200)
+        first = self.client.post(
+            url,
+            {"name": "Test Client", "location": "Kampala", "rating": 5, "message": "Excellent work."},
+        )
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(project.client.message, "Excellent work.")
+
+        updated = self.client.post(
+            url,
+            {"name": "Test Client", "location": "Mbarara", "rating": 4, "message": "Updated feedback."},
+        )
+        self.assertEqual(updated.status_code, 200)
+        project.client.refresh_from_db()
+        self.assertEqual(project.client.message, "Updated feedback.")
 
     def test_platform_owner_can_create_and_update_an_admin_account(self):
         self.user.is_superuser = True
