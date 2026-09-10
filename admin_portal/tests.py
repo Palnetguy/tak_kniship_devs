@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
+from unittest.mock import patch
 from rest_framework.test import APIClient
 
 from .models import AuditEvent, ContactMessageReply, ManagedProject, ProjectMembership
@@ -190,6 +191,35 @@ class AdminPortalApiTests(TestCase):
         message.refresh_from_db()
         self.assertEqual(message.handled_by, self.user)
         self.assertIsNotNone(message.handled_at)
+
+    @patch("tak_devs_app.signals.email_executor.submit")
+    def test_only_platform_owner_can_delete_contact_messages_in_bulk(self, _submit):
+        first = ContactUsMessage.objects.create(
+            name="Spam One", subject="Spam", email="one@example.com", message="Unwanted message one", is_spam=True,
+        )
+        second = ContactUsMessage.objects.create(
+            name="Spam Two", subject="Spam", email="two@example.com", message="Unwanted message two", is_spam=True,
+        )
+        self.client.force_login(self.user)
+        denied = self.client.post(
+            "/api/admin/v1/messages/bulk-delete/",
+            {"ids": [first.pk, second.pk]},
+            format="json",
+        )
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(ContactUsMessage.objects.count(), 2)
+
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
+        allowed = self.client.post(
+            "/api/admin/v1/messages/bulk-delete/",
+            {"ids": [first.pk, second.pk]},
+            format="json",
+        )
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.data["deleted"], 2)
+        self.assertFalse(ContactUsMessage.objects.exists())
+        self.assertTrue(AuditEvent.objects.filter(action="admin.messages.bulk_deleted").exists())
 
     def test_staff_member_can_reply_to_a_contact_message_in_local_preview(self):
         message = ContactUsMessage.objects.create(
