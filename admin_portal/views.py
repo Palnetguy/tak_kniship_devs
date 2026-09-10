@@ -488,7 +488,37 @@ class ContactMessageViewSet(AuditedModelViewSet):
     ).order_by("-date_sent")
     serializer_class = ContactMessageAdminSerializer
     audit_namespace = "admin.messages"
-    http_method_names = ("get", "patch", "post", "head", "options")
+    http_method_names = ("get", "patch", "post", "delete", "head", "options")
+
+    def get_permissions(self):
+        if self.action in {"destroy", "bulk_delete"}:
+            return [IsPlatformOwner()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=("post",), url_path="bulk-delete")
+    def bulk_delete(self, request):
+        message_ids = request.data.get("ids")
+        if not isinstance(message_ids, list) or not message_ids:
+            raise ValidationError({"ids": "Select at least one enquiry to delete."})
+        if len(message_ids) > 100:
+            raise ValidationError({"ids": "Delete no more than 100 enquiries at once."})
+        try:
+            message_ids = list(dict.fromkeys(int(message_id) for message_id in message_ids))
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({"ids": "Every enquiry ID must be a number."}) from exc
+
+        messages = self.get_queryset().filter(pk__in=message_ids)
+        existing_ids = list(messages.values_list("pk", flat=True))
+        if len(existing_ids) != len(message_ids):
+            raise ValidationError({"ids": "One or more selected enquiries were not found."})
+        record_event(
+            actor=request.user,
+            action="admin.messages.bulk_deleted",
+            target_type="tak_devs_app.contactusmessage",
+            metadata={"count": len(existing_ids), "message_ids": existing_ids},
+        )
+        messages.delete()
+        return Response({"deleted": len(existing_ids)})
 
     @action(detail=True, methods=("post",))
     def reply(self, request, pk=None):
