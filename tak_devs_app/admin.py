@@ -155,10 +155,10 @@ class TeamMemberAdmin(admin.ModelAdmin):
 
 @admin.register(ContactUsMessage)
 class ContactUsMessageAdmin(admin.ModelAdmin):
-    list_display = ('subject', 'name', 'email', 'phone_number', 'date_sent')
-    list_filter = ('date_sent',)
+    list_display = ('subject', 'name', 'email', 'is_spam', 'spam_score', 'date_sent')
+    list_filter = ('is_spam', 'turnstile_verified', 'date_sent')
     search_fields = ('name', 'email', 'subject', 'message')
-    readonly_fields = ('date_sent',)
+    readonly_fields = ('date_sent', 'request_id', 'spam_score', 'spam_reasons', 'source_ip_hash', 'submission_fingerprint', 'user_agent', 'turnstile_verified')
     date_hierarchy = 'date_sent'
 
 @admin.register(MobileApplication)

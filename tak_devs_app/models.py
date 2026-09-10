@@ -1,4 +1,6 @@
 from django.conf import settings
+import uuid
+
 from django.db import models
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission, Group
@@ -154,8 +156,16 @@ class ContactUsMessage(models.Model):
     subject = models.CharField(max_length=255)
     email = models.EmailField()
     message = models.TextField()
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20, blank=True, default='')
     date_sent = models.DateTimeField(auto_now_add=True)
+    request_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    is_spam = models.BooleanField(default=False, db_index=True)
+    spam_score = models.PositiveSmallIntegerField(default=0)
+    spam_reasons = models.JSONField(default=list, blank=True)
+    source_ip_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    submission_fingerprint = models.CharField(max_length=64, blank=True, db_index=True)
+    user_agent = models.CharField(max_length=500, blank=True)
+    turnstile_verified = models.BooleanField(default=False)
     handled_at = models.DateTimeField(null=True, blank=True)
     handled_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,

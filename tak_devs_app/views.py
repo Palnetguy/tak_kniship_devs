@@ -1,8 +1,13 @@
 # views.py
 from datetime import timedelta
+import hashlib
+import hmac
+import ipaddress
+import re
 
 from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics
+from rest_framework.exceptions import Throttled
 
 from tak_web.settings import EMAIL_HOST_USER
 from .models import Agreement, ContactInfo, FeedbackInvitation, Project, ProjectClient, TeamMember, Testimonial, Gallery, FAQ, ContactUsMessage, WorkExperience, MobileApplication, DesktopApplication, WebApplication
@@ -52,6 +57,7 @@ class ProjectListView(generics.ListAPIView):
         )
     )
     serializer_class = ProjectSerializer
+    permission_classes = [LocalOrHasAPIKey]
 
     @swagger_auto_schema(
         operation_description="Get a list of all projects",
@@ -66,6 +72,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     """
     queryset = ProjectListView.queryset
     serializer_class = ProjectSerializer
+    permission_classes = [LocalOrHasAPIKey]
 
     @swagger_auto_schema(
         operation_description="Get details of a specific project",
@@ -143,6 +150,61 @@ class ContactUsMessageCreateView(generics.CreateAPIView):
     queryset = ContactUsMessage.objects.all()
     serializer_class = ContactUsMessageSerializer
     permission_classes = [LocalOrHasAPIKey]
+
+    def perform_create(self, serializer):
+        now = timezone.now()
+        email = serializer.validated_data['email'].strip().lower()
+        message = serializer.validated_data['message'].strip()
+        client_ip = self.request.headers.get('X-TAK-Client-IP', '').strip()
+        try:
+            client_ip = str(ipaddress.ip_address(client_ip))
+        except ValueError:
+            client_ip = ''
+
+        def private_hash(value):
+            if not value:
+                return ''
+            return hmac.new(
+                settings.SECRET_KEY.encode(), value.encode(), hashlib.sha256
+            ).hexdigest()
+
+        source_ip_hash = private_hash(client_ip)
+        fingerprint = private_hash(f'{email}\n{message.casefold()}')
+        recent = ContactUsMessage.objects.filter(date_sent__gte=now - timedelta(days=1))
+        if source_ip_hash:
+            hourly_count = recent.filter(
+                source_ip_hash=source_ip_hash,
+                date_sent__gte=now - timedelta(hours=1),
+            ).count()
+            daily_count = recent.filter(source_ip_hash=source_ip_hash).count()
+            if hourly_count >= 5 or daily_count >= 15:
+                raise Throttled(detail='Too many contact requests. Please try again later.', wait=3600)
+        if recent.filter(email__iexact=email).count() >= 3:
+            raise Throttled(detail='Too many contact requests for this email address.', wait=86400)
+
+        reasons = []
+        score = 0
+        if re.fullmatch(r'[A-Za-z]{12,40}', message) and re.search(r'[A-Z].*[A-Z]', message[1:]):
+            score += 6
+            reasons.append('random-letter-message')
+        if recent.filter(submission_fingerprint=fingerprint).exists():
+            score += 6
+            reasons.append('duplicate-submission')
+        lowered = message.casefold()
+        if len(re.findall(r'https?://|www\.', lowered)) >= 2:
+            score += 4
+            reasons.append('multiple-links')
+
+        serializer.save(
+            email=email,
+            source_ip_hash=source_ip_hash,
+            submission_fingerprint=fingerprint,
+            user_agent=self.request.headers.get('X-TAK-User-Agent', '')[:500],
+            turnstile_verified=self.request.headers.get('X-TAK-Turnstile-Verified') == '1',
+            is_spam=score >= 5,
+            spam_score=score,
+            spam_reasons=reasons,
+        )
 
 class WorkExperienceDetailView(generics.ListAPIView):
     queryset = WorkExperience.objects.all()

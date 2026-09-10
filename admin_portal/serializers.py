@@ -247,9 +247,13 @@ class ContactMessageAdminSerializer(serializers.ModelSerializer):
         model = ContactUsMessage
         fields = (
             "id", "name", "subject", "email", "message", "phone_number", "date_sent",
-            "handled_at", "handled_by", "handled_by_name", "replies",
+            "handled_at", "handled_by", "handled_by_name", "replies", "request_id",
+            "is_spam", "spam_score", "spam_reasons", "turnstile_verified",
         )
-        read_only_fields = ("date_sent", "handled_by", "handled_by_name")
+        read_only_fields = (
+            "date_sent", "handled_by", "handled_by_name", "request_id",
+            "spam_score", "spam_reasons", "turnstile_verified",
+        )
 
 
 class AgreementAdminSerializer(serializers.ModelSerializer):

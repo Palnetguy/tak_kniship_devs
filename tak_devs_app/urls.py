@@ -1,6 +1,7 @@
 # urls.py
 
 from django.urls import path
+from django.conf import settings
 from .views import (
     ContactInfoView, PolicyDetailAgreement, ProjectDetailWithApplicationsView, ProjectListView, 
     TeamMemberListView, TermsDetailAgreement, TestimonialListView,
@@ -26,7 +27,10 @@ urlpatterns = [
     path('projects/<int:project_id>/policy/', PolicyDetailAgreement.as_view(), name='policy-detail'),
     path('projects/<int:project_id>/terms/', TermsDetailAgreement.as_view(), name='terms-detail'),
     
-    # Form URLs
-    path('testimonials/submit/', testimonial_form, name='testimonial_form'),
     path('feedback/<int:project_id>/<str:token>/', client_feedback_form, name='client_feedback_form'),
 ]
+
+# The legacy testimonial form has no invitation token. Keep it available for
+# local compatibility, but do not expose an unprotected write surface in production.
+if settings.DEBUG:
+    urlpatterns.append(path('testimonials/submit/', testimonial_form, name='testimonial_form'))

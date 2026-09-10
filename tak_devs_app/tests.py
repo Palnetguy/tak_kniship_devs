@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
 from django.test import SimpleTestCase, TestCase, override_settings
+from rest_framework.test import APIClient
 
 from .models import ContactUsMessage
 from .serializers import ContactUsMessageSerializer
@@ -74,3 +75,60 @@ class PublicContactSerializerTests(TestCase):
         message = serializer.save()
         self.assertIsNone(message.handled_at)
         self.assertIsNone(message.handled_by)
+
+
+class PublicContactSecurityTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @override_settings(DEBUG=True)
+    @patch("tak_devs_app.signals.email_executor.submit")
+    def test_random_letter_submission_is_quarantined_without_email(self, submit):
+        response = self.client.post(
+            "/api/contact-us/",
+            {
+                "name": "Rlzjkkr Nnbmse",
+                "subject": "Website enquiry from Hvmklcdry LLC",
+                "email": "visitor@example.com",
+                "message": "leEQugIdkxgTZiWeWaIdL",
+            },
+            format="json",
+            HTTP_HOST="localhost",
+            HTTP_X_TAK_CLIENT_IP="203.0.113.10",
+            HTTP_X_TAK_USER_AGENT="security-test",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        message = ContactUsMessage.objects.get()
+        self.assertTrue(message.is_spam)
+        self.assertIn("random-letter-message", message.spam_reasons)
+        self.assertNotEqual(message.source_ip_hash, "203.0.113.10")
+        submit.assert_not_called()
+
+    @override_settings(DEBUG=True)
+    @patch("tak_devs_app.signals.email_executor.submit")
+    def test_contact_email_has_a_daily_submission_limit(self, _submit):
+        payload = {
+            "name": "Genuine Visitor",
+            "subject": "Project discussion",
+            "email": "visitor@example.com",
+            "message": "I would like to discuss a website project with your team.",
+        }
+        for index in range(3):
+            response = self.client.post(
+                "/api/contact-us/",
+                {**payload, "message": f"{payload['message']} Reference {index}."},
+                format="json",
+                HTTP_HOST="localhost",
+                HTTP_X_TAK_CLIENT_IP="203.0.113.11",
+            )
+            self.assertEqual(response.status_code, 201)
+
+        limited = self.client.post(
+            "/api/contact-us/",
+            payload,
+            format="json",
+            HTTP_HOST="localhost",
+            HTTP_X_TAK_CLIENT_IP="203.0.113.11",
+        )
+        self.assertEqual(limited.status_code, 429)

@@ -26,6 +26,11 @@ class FAQSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ContactUsMessageSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(min_length=2, max_length=100, trim_whitespace=True)
+    subject = serializers.CharField(min_length=3, max_length=255, trim_whitespace=True)
+    phone_number = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    message = serializers.CharField(min_length=10, max_length=5000, trim_whitespace=True)
+
     class Meta:
         model = ContactUsMessage
         fields = ('id', 'name', 'subject', 'email', 'phone_number', 'message', 'date_sent')
