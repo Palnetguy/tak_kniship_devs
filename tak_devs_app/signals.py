@@ -279,6 +279,16 @@ def notify_admin_contact_form(sender, instance, created, **kwargs):
     """Queue visitor and admin notifications through the Resend API."""
     if not created:
         return
+    if getattr(instance, 'is_spam', False):
+        logger.warning(
+            "Contact notification quarantined as spam",
+            extra={
+                'contact_message_id': instance.pk,
+                'spam_score': instance.spam_score,
+                'spam_reasons': instance.spam_reasons,
+            },
+        )
+        return
 
     messages = []
     admin_emails = getattr(settings, 'ADMIN_EMAILS', [])

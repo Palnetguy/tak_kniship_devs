@@ -175,7 +175,9 @@ class WebsiteOverviewView(APIView):
         return Response(
             {
                 "summary": {
-                    "open_enquiries": ContactUsMessage.objects.filter(handled_at__isnull=True).count(),
+                    "open_enquiries": ContactUsMessage.objects.filter(
+                        handled_at__isnull=True, is_spam=False
+                    ).count(),
                     "portfolio_projects": Project.objects.count(),
                     "team_members": TeamMember.objects.count(),
                     "content_items": FAQ.objects.count(),
